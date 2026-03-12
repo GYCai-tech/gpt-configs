@@ -1,0 +1,266 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Jira GPT API",
+    "description": "API para crear y gestionar issues en Jira desde ChatGPT mediante CSV",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://werner-mammalogical-unbeautifully.ngrok-free.dev"
+    }
+  ],
+  "paths": {
+    "/jira": {
+      "post": {
+        "operationId": "subirIssuesJira",
+        "summary": "Crea o actualiza issues en Jira",
+        "description": "Recibe un array de issues y los crea en Jira. Primero crea los que tienen 'ref' (Epics) y luego los que tienen 'parent_ref' (Tareas). Campos: accion, proyecto, tipo, ref, parent_ref, titulo, descripcion, fechaInicio, fechaFin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["issues"],
+                "properties": {
+                  "issues": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["accion"],
+                      "properties": {
+                        "accion":      { "type": "string", "enum": ["crear", "actualizar", "obtener", "listar"] },
+                        "proyecto":    { "type": "string", "description": "Key del proyecto en Jira (ej: DAT, MKT)" },
+                        "tipo":        { "type": "string", "description": "Epic | Tarea | Subtarea" },
+                        "ref":         { "type": "string", "description": "Alias local para referenciar como padre (solo Epics)" },
+                        "parent_ref":  { "type": "string", "description": "Alias ref de la Epic padre" },
+                        "titulo":      { "type": "string" },
+                        "descripcion": { "type": "string" },
+                        "fechaInicio": { "type": "string", "description": "YYYY-MM-DD" },
+                        "fechaFin":    { "type": "string", "description": "YYYY-MM-DD" },
+                        "asignado":    { "type": "string" },
+                        "prioridad":   { "type": "string", "description": "Highest | High | Medium | Low | Lowest" },
+                        "key":         { "type": "string" },
+                        "jql":         { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado del procesamiento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "procesadas":      { "type": "integer" },
+                    "errores":         { "type": "integer" },
+                    "resultados":      { "type": "array", "items": { "type": "object" } },
+                    "errores_detalle": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jira-csv": {
+      "post": {
+        "operationId": "subirCSVJira",
+        "summary": "Sube un CSV para crear o actualizar issues en Jira",
+        "description": "Procesa un CSV para crear/actualizar issues en Jira. Columnas: accion (crear|actualizar|obtener|listar), proyecto, tipo, ref, parent_ref, titulo, descripcion, fechaInicio, fechaFin, asignado, key, jql. Las Epics (con ref) se crean primero; las tareas usan parent_ref para enlazarse.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Archivo CSV con las acciones a ejecutar en Jira"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado del procesamiento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "procesadas": { "type": "integer" },
+                    "errores": { "type": "integer" },
+                    "resultados": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ok": { "type": "boolean" },
+                          "key": { "type": "string" },
+                          "url": { "type": "string" },
+                          "titulo": { "type": "string" },
+                          "fila": { "type": "integer" },
+                          "accion": { "type": "string" }
+                        }
+                      }
+                    },
+                    "errores_detalle": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fila": { "type": "integer" },
+                          "accion": { "type": "string" },
+                          "titulo": { "type": "string" },
+                          "error": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/proyectos": {
+      "get": {
+        "operationId": "listarProyectos",
+        "summary": "Lista los proyectos disponibles en Jira",
+        "responses": {
+          "200": {
+            "description": "Lista de proyectos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proyectos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "key": { "type": "string" },
+                          "nombre": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/epics": {
+      "get": {
+        "operationId": "listarEpics",
+        "summary": "Lista las Epics de un proyecto Jira",
+        "description": "Devuelve todas las Epics del proyecto con su key, título, estado, responsable y fechas. Úsalo cuando el usuario quiera añadir tareas a una Epic existente o consultar los proyectos en curso.",
+        "parameters": [
+          {
+            "name": "proyecto",
+            "in": "query",
+            "required": true,
+            "description": "Key o nombre del proyecto en Jira (ej: DATA, MKT)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de Epics del proyecto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proyecto": { "type": "string" },
+                    "epics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key":         { "type": "string", "description": "Key de Jira de la Epic (ej: DATA-3). Usa este valor como parent_ref al crear tareas." },
+                          "titulo":      { "type": "string" },
+                          "estado":      { "type": "string" },
+                          "responsable": { "type": "string" },
+                          "fechaInicio": { "type": "string" },
+                          "fechaFin":    { "type": "string" },
+                          "url":         { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tareas": {
+      "get": {
+        "operationId": "listarTareasDeEpic",
+        "summary": "Lista las tareas y subtareas de una Epic",
+        "description": "Devuelve todas las tareas y subtareas vinculadas a una Epic. Úsalo para revisar qué hay ya creado antes de añadir más tareas o subtareas.",
+        "parameters": [
+          {
+            "name": "epic",
+            "in": "query",
+            "required": true,
+            "description": "Key de Jira de la Epic (ej: DATA-5)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de tareas de la Epic",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "epic": { "type": "string" },
+                    "tareas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key":         { "type": "string", "description": "Key de Jira de la tarea (ej: DATA-7). Usa este valor como parent_ref al crear subtareas." },
+                          "tipo":        { "type": "string" },
+                          "titulo":      { "type": "string" },
+                          "estado":      { "type": "string" },
+                          "responsable": { "type": "string" },
+                          "fechaInicio": { "type": "string" },
+                          "fechaFin":    { "type": "string" },
+                          "url":         { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

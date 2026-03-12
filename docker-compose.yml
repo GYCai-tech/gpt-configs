@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  jira-gpt:
+    build: .
+    container_name: jira-gpt
+    restart: always
+    ports:
+      - "8090:8090"
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-jira-gpt
+    restart: always
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http jira-gpt:8090
+    depends_on:
+      - jira-gpt
+    ports:
+      - "4041:4040"

@@ -4,10 +4,12 @@ import json
 import logging
 import re
 import requests
+import pyodbc
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime, date
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jira-gpt")
@@ -421,3 +423,59 @@ def listar_tareas(epic: str):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ── DB Producción GYC ──────────────────────────────────────────────────────────
+
+DB_CONN_STR = (
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=10.0.0.6;"
+    "DATABASE=GOMEZYCRESPO;"
+    "UID=gestor_incidencias;"
+    "PWD=Auria1973;"
+    "Encrypt=no;"
+    "TrustServerCertificate=yes;"
+)
+DB_MAX_ROWS = 100
+
+
+def _db_serialize(val):
+    if isinstance(val, datetime):
+        return val.strftime("%d/%m/%Y %H:%M")
+    if isinstance(val, date):
+        return val.strftime("%d/%m/%Y")
+    return val
+
+
+class DBQueryRequest(BaseModel):
+    sql: str
+
+
+@app.post("/query")
+def db_query(request: DBQueryRequest):
+    """
+    Ejecuta una consulta SELECT en la base de datos de producción de GYC.
+    Solo se permiten SELECT. Devuelve hasta 100 filas.
+    """
+    sql = request.sql.strip()
+    first_word = sql.lstrip("(").split()[0].upper() if sql else ""
+    if first_word not in ("SELECT", "WITH"):
+        raise HTTPException(status_code=400, detail="Solo se permiten consultas SELECT.")
+
+    try:
+        conn = pyodbc.connect(DB_CONN_STR, timeout=15)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        columns = [col[0] for col in cursor.description]
+        raw = cursor.fetchmany(DB_MAX_ROWS + 1)
+        conn.close()
+        truncated = len(raw) > DB_MAX_ROWS
+        rows = [
+            {col: _db_serialize(val) for col, val in zip(columns, row)}
+            for row in raw[:DB_MAX_ROWS]
+        ]
+        return {"columns": columns, "rows": rows, "row_count": len(rows), "truncated": truncated}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

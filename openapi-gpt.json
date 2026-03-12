@@ -261,6 +261,50 @@
           }
         }
       }
+    },
+    "/query": {
+      "post": {
+        "operationId": "consultarProduccion",
+        "summary": "Ejecutar consulta SQL en la base de datos de producción de GYC",
+        "description": "Recibe una consulta SELECT generada a partir de lenguaje natural y la ejecuta contra la base de datos GOMEZYCRESPO. Devuelve columnas y filas con los resultados (máximo 100 filas).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sql"],
+                "properties": {
+                  "sql": {
+                    "type": "string",
+                    "description": "Consulta SQL SELECT válida para SQL Server. Solo SELECT, nunca INSERT/UPDATE/DELETE."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultados de la consulta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "columns": { "type": "array", "items": { "type": "string" } },
+                    "rows": { "type": "array", "items": { "type": "object" } },
+                    "row_count": { "type": "integer" },
+                    "truncated": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "SQL inválido o no es SELECT" },
+          "500": { "description": "Error al ejecutar la consulta" }
+        }
+      }
     }
   }
 }

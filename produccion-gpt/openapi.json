@@ -1,0 +1,57 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GYC Producción API",
+    "description": "Ejecuta consultas SQL en la base de datos de producción de Gómez y Crespo.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://werner-mammalogical-unbeautifully.ngrok-free.dev"
+    }
+  ],
+  "paths": {
+    "/query": {
+      "post": {
+        "operationId": "consultarProduccion",
+        "summary": "Ejecutar consulta SQL en la base de datos de producción de GYC",
+        "description": "Recibe una consulta SELECT y la ejecuta contra GOMEZYCRESPO. Devuelve hasta 100 filas.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sql"],
+                "properties": {
+                  "sql": {
+                    "type": "string",
+                    "description": "Consulta SQL SELECT válida para SQL Server."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultados de la consulta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "columns": { "type": "array", "items": { "type": "string" } },
+                    "rows": { "type": "array", "items": { "type": "object" } },
+                    "row_count": { "type": "integer" },
+                    "truncated": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

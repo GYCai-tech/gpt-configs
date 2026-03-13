@@ -343,6 +343,31 @@ async def procesar_csv(file: UploadFile = File(...)):
     return JSONResponse(_procesar_filas(filas))
 
 
+@app.get("/usuarios")
+def listar_usuarios_proyecto(proyecto: str):
+    """
+    Lista los usuarios asignables a un proyecto Jira.
+    Parámetro: proyecto (key o nombre del proyecto, ej: DATA)
+    """
+    try:
+        project_key = resolver_proyecto_key(proyecto)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    r = requests.get(
+        f"{JIRA_BASE_URL}/rest/api/3/user/assignable/search",
+        headers=HEADERS,
+        params={"project": project_key, "maxResults": 50}
+    )
+    r.raise_for_status()
+    usuarios = [
+        {"nombre": u["displayName"], "email": u.get("emailAddress", "")}
+        for u in r.json()
+        if u.get("active", True)
+    ]
+    return {"proyecto": project_key, "usuarios": usuarios}
+
+
 @app.get("/proyectos")
 def listar_proyectos():
     """Lista todos los proyectos disponibles en Jira."""

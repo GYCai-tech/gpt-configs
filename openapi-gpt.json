@@ -138,6 +138,47 @@
         }
       }
     },
+    "/usuarios": {
+      "get": {
+        "operationId": "listarUsuariosProyecto",
+        "summary": "Lista los usuarios asignables a un proyecto Jira",
+        "description": "Devuelve los miembros del proyecto que pueden ser asignados como responsables. Úsalo siempre antes de crear tareas para preguntar al usuario quién quiere como responsable.",
+        "parameters": [
+          {
+            "name": "proyecto",
+            "in": "query",
+            "required": true,
+            "description": "Key o nombre del proyecto en Jira (ej: DATA, MKT)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuarios asignables",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proyecto": { "type": "string" },
+                    "usuarios": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nombre": { "type": "string" },
+                          "email":  { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/proyectos": {
       "get": {
         "operationId": "listarProyectos",

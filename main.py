@@ -194,10 +194,10 @@ def obtener_issue(row: dict, ref_map: dict) -> dict:
 
 def listar_issues(row: dict, ref_map: dict) -> dict:
     jql = row.get("jql", f"project = \"{row.get('proyecto', '')}\" ORDER BY created DESC")
-    r = requests.get(
-        f"{JIRA_BASE_URL}/rest/api/3/search",
+    r = requests.post(
+        f"{JIRA_BASE_URL}/rest/api/3/search/jql",
         headers=HEADERS,
-        params={"jql": jql, "maxResults": 20, "fields": "summary,status,issuetype,assignee"}
+        json={"jql": jql, "maxResults": 20, "fields": ["summary", "status", "issuetype", "assignee"]}
     )
     r.raise_for_status()
     issues = r.json().get("issues", [])
@@ -389,14 +389,10 @@ def listar_epics(proyecto: str):
         raise HTTPException(status_code=404, detail=str(e))
 
     jql = f'project = "{project_key}" AND issuetype = Epic ORDER BY created DESC'
-    r = requests.get(
-        f"{JIRA_BASE_URL}/rest/api/3/search",
+    r = requests.post(
+        f"{JIRA_BASE_URL}/rest/api/3/search/jql",
         headers=HEADERS,
-        params={
-            "jql": jql,
-            "maxResults": 50,
-            "fields": "summary,status,assignee,duedate,customfield_10015"
-        }
+        json={"jql": jql, "maxResults": 50, "fields": ["summary", "status", "assignee", "duedate", "customfield_10015"]}
     )
     r.raise_for_status()
 
@@ -425,14 +421,10 @@ def listar_tareas(epic: str):
         raise HTTPException(status_code=400, detail="El parámetro 'epic' debe ser un key de Jira válido (ej: DATA-5).")
 
     jql = f'"Epic Link" = {epic} OR parent = {epic} ORDER BY created ASC'
-    r = requests.get(
-        f"{JIRA_BASE_URL}/rest/api/3/search",
+    r = requests.post(
+        f"{JIRA_BASE_URL}/rest/api/3/search/jql",
         headers=HEADERS,
-        params={
-            "jql": jql,
-            "maxResults": 100,
-            "fields": "summary,status,issuetype,assignee,duedate,customfield_10015,parent"
-        }
+        json={"jql": jql, "maxResults": 100, "fields": ["summary", "status", "issuetype", "assignee", "duedate", "customfield_10015", "parent"]}
     )
     r.raise_for_status()
 

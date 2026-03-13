@@ -51,6 +51,33 @@ SELECT TOP 20 IdOrden, Descrip, cuantosBonosActivo, cuantosBonosBloqueado, Fecha
 FROM persV_ConsultaProduccion WHERE cuantosBonosActivo > 0
 ```
 
+### vTiemposMediosBono — Tiempos históricos por artículo y bono ⭐ MÁS ÚTIL PARA COMPARAR RENDIMIENTO
+Contiene la media histórica de minutos por pieza para cada combinación de artículo + bono, calculada sobre todas las ejecuciones finalizadas. Úsala para comparar el tiempo actual de un bono activo contra su histórico, detectar órdenes lentas o rápidas, y estimar cuánto falta para terminar.
+Columnas: `IdArticulo, IdBono, Bono, Area, VecesEjecutado, MediaMinPorPieza, MinMinPorPieza, MaxMinPorPieza, MediaUlt5MinPorPieza` (media de las 5 últimas — más relevante), `FechaUltimaEjecucion`
+
+Ejemplo — comparar bonos activos contra su histórico:
+```sql
+SELECT TOP 20
+    e.IdOrden, e.IdBono, e.Bono, e.Area,
+    e.MinutosTrabajados,
+    t.MediaUlt5MinPorPieza,
+    o.Cantidad,
+    ROUND(t.MediaUlt5MinPorPieza * o.Cantidad, 0) AS MinutosEsperados,
+    ROUND(CAST(e.MinutosTrabajados AS float) / NULLIF(t.MediaUlt5MinPorPieza * o.Cantidad, 0) * 100, 0) AS PctProgreso
+FROM vEstadoCompletoBonos e
+INNER JOIN Ordenes o ON o.IdOrden = e.IdOrden
+LEFT JOIN vTiemposMediosBono t ON t.IdArticulo = o.IdArticulo AND t.IdBono = e.IdBono
+WHERE e.IdEstado = 1
+ORDER BY PctProgreso DESC
+```
+
+Ejemplo — tiempos históricos de un artículo concreto:
+```sql
+SELECT TOP 10 IdBono, Bono, Area, VecesEjecutado, MediaMinPorPieza, MediaUlt5MinPorPieza, FechaUltimaEjecucion
+FROM vTiemposMediosBono
+WHERE IdArticulo = '10501059'
+```
+
 ### vEstadoCompletoBonos — Estado completo de bonos activos ⭐ MÁS ÚTIL PARA ESTADO EN TIEMPO REAL
 Vista unificada que combina estado del bono, localización en máquina, tiempos trabajados y alertas de material. Úsala como punto de partida para cualquier pregunta sobre el estado actual de la producción.
 Columnas: `IdOrden, IdBono, Bono, IdEstado` (0=Espera, 1=Activo, 3=Bloqueado), `Area, FechaPrevFin, IdMaquina, Empleado, FichajeInicio, MinutosTrabajados, EmpleadosDistintos, MaterialesEnDeficit, PeorDisponible`

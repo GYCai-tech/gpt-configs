@@ -92,9 +92,17 @@ def get_tipos_incidencia(project_key: str) -> list:
     return tipos
 
 
+NOMBRES_SUBTAREA = {"subtarea", "subtask", "sub-task", "sub tarea"}
+
 def resolver_tipo(project_key: str, tipo_buscado: str = "") -> str:
     tipos = get_tipos_incidencia(project_key)
     tipo_buscado = tipo_buscado.strip().lower()
+
+    # Si el usuario pide explícitamente una subtarea, buscar tipos con subtask=True
+    if tipo_buscado in NOMBRES_SUBTAREA:
+        match = next((t for t in tipos if t.get("subtask")), None)
+        if match:
+            return match["id"]
 
     if tipo_buscado:
         match = next((t for t in tipos if t["name"].lower() == tipo_buscado), None)

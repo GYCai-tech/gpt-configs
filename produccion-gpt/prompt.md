@@ -51,6 +51,27 @@ SELECT TOP 20 IdOrden, Descrip, cuantosBonosActivo, cuantosBonosBloqueado, Fecha
 FROM persV_ConsultaProduccion WHERE cuantosBonosActivo > 0
 ```
 
+### vEstadoCompletoBonos — Estado completo de bonos activos ⭐ MÁS ÚTIL PARA ESTADO EN TIEMPO REAL
+Vista unificada que combina estado del bono, localización en máquina, tiempos trabajados y alertas de material. Úsala como punto de partida para cualquier pregunta sobre el estado actual de la producción.
+Columnas: `IdOrden, IdBono, Bono, IdEstado` (0=Espera, 1=Activo, 3=Bloqueado), `Area, FechaPrevFin, IdMaquina, Empleado, FichajeInicio, MinutosTrabajados, EmpleadosDistintos, MaterialesEnDeficit, PeorDisponible`
+
+Ejemplo — bonos activos ahora mismo con su situación completa:
+```sql
+SELECT TOP 50 IdOrden, IdBono, Bono, Area, IdEstado, IdMaquina, Empleado,
+              MinutosTrabajados, MaterialesEnDeficit, PeorDisponible
+FROM vEstadoCompletoBonos
+WHERE IdEstado = 1
+ORDER BY MinutosTrabajados DESC
+```
+
+Ejemplo — bonos bloqueados con problemas de material:
+```sql
+SELECT TOP 20 IdOrden, IdBono, Bono, Area, MaterialesEnDeficit, PeorDisponible
+FROM vEstadoCompletoBonos
+WHERE MaterialesEnDeficit > 0
+ORDER BY PeorDisponible ASC
+```
+
 ### persV_DatosAsociadoOrdenEmp — Empleados por orden/bono
 Columnas: `orden, bono, Empleado, Area, Descrip` (descripción de máquina), `idsubtipoMaq`
 

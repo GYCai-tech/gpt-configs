@@ -60,6 +60,25 @@ SELECT TOP 10 orden, bono, Empleado, Area, Descrip
 FROM persV_DatosAsociadoOrdenEmp WHERE Empleado LIKE '%Juan%'
 ```
 
+### VOrdenes_Bonos_Lineas_Emp — Localización actual de bonos por máquina ⭐ MÁS ÚTIL PARA SABER DÓNDE ESTÁ CADA BONO
+Muestra todos los fichajes de empleados por bono, incluyendo en qué máquina se están ejecutando. Úsala para saber en qué máquina está cada bono en este momento o dónde ha pasado.
+Columnas: `IdOrden, IdBono, IdLinea, IdNum, IdEmpleado, Empleado` (nombre completo), `IdMaquina, HInicial, HFinal` (NULL=trabajando ahora), `IdCosteTipo, PorcentajeTrabajo`
+
+Ejemplo — en qué máquina está actualmente cada bono de una orden:
+```sql
+SELECT TOP 50 IdOrden, IdBono, Empleado, IdMaquina, HInicial
+FROM VOrdenes_Bonos_Lineas_Emp
+WHERE IdOrden = 5000 AND HFinal IS NULL
+```
+
+Ejemplo — localización actual de todos los bonos activos:
+```sql
+SELECT TOP 100 IdOrden, IdBono, Empleado, IdMaquina, HInicial
+FROM VOrdenes_Bonos_Lineas_Emp
+WHERE HFinal IS NULL
+ORDER BY HInicial DESC
+```
+
 ---
 
 ## Tablas base (para consultas más detalladas)

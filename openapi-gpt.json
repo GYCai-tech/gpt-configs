@@ -40,7 +40,8 @@
                         "fechaInicio": { "type": "string", "description": "YYYY-MM-DD" },
                         "fechaFin":    { "type": "string", "description": "YYYY-MM-DD" },
                         "asignado":    { "type": "string" },
-                        "prioridad":   { "type": "string", "description": "Highest | High | Medium | Low | Lowest" },
+                        "prioridad":       { "type": "string", "description": "Highest | High | Medium | Low | Lowest" },
+                        "tiempoEstimado": { "type": "number", "description": "Estimación de tiempo en horas (ej: 4, 0.5, 8). Obligatorio para Tareas y Subtareas." },
                         "key":         { "type": "string" },
                         "jql":         { "type": "string" }
                       }

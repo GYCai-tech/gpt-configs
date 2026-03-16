@@ -153,6 +153,17 @@ def construir_fields(row: dict, ref_map: dict) -> dict:
     if row.get("fechaInicio"):
         fields["customfield_10015"] = row["fechaInicio"].strip()
 
+    # Tiempo estimado en horas → timetracking.originalEstimate (estimación original)
+    if row.get("tiempoEstimado"):
+        horas = float(row["tiempoEstimado"])
+        horas_int = int(horas)
+        minutos = int(round((horas % 1) * 60))
+        if minutos:
+            estimacion_str = f"{horas_int}h {minutos}m"
+        else:
+            estimacion_str = f"{horas_int}h"
+        fields["timetracking"] = {"originalEstimate": estimacion_str}
+
     # Padre: puede ser un key de Jira directo o una referencia local del CSV
     parent_ref = row.get("parent_ref", "").strip()
     if parent_ref:
@@ -225,6 +236,15 @@ def actualizar_issue(row: dict, ref_map: dict) -> dict:
         fields["duedate"] = row["fechaFin"].strip()
     if row.get("fechaInicio"):
         fields["customfield_10015"] = row["fechaInicio"].strip()
+    if row.get("tiempoEstimado"):
+        horas = float(row["tiempoEstimado"])
+        horas_int = int(horas)
+        minutos = int(round((horas % 1) * 60))
+        if minutos:
+            estimacion_str = f"{horas_int}h {minutos}m"
+        else:
+            estimacion_str = f"{horas_int}h"
+        fields["timetracking"] = {"originalEstimate": estimacion_str}
 
     r = requests.put(f"{JIRA_BASE_URL}/rest/api/3/issue/{row['key']}", headers=HEADERS, json={"fields": fields})
     r.raise_for_status()
@@ -294,6 +314,7 @@ class IssueRow(BaseModel):
     prioridad: Optional[str] = ""
     key: Optional[str] = ""
     jql: Optional[str] = ""
+    tiempoEstimado: Optional[float] = None
 
 
 class IssuesPayload(BaseModel):

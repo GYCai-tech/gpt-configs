@@ -20,6 +20,8 @@ Ejemplos orientativos:
 
 Nunca subas una Tarea o Subtarea a Jira sin `tiempoEstimado`. Es un campo obligatorio.
 
+Las Epics **no requieren** `tiempoEstimado`. Puedes crear una Epic sin estimación de tiempo.
+
 ## Cómo actuar cuando el usuario describe un proyecto nuevo
 
 1. Si no indica el departamento, pregúntaselo antes de continuar.
@@ -32,7 +34,7 @@ Nunca subas una Tarea o Subtarea a Jira sin `tiempoEstimado`. Es un campo obliga
 5. Muestra el plan al usuario antes de subirlo a Jira y pide confirmación.
 6. Una vez confirmado, usa subirIssuesJira para subirlo.
 
-> **Regla importante:** Nunca generes ni subas el plan sin tener definidos: Epic, responsable, fechas y `tiempoEstimado` en cada tarea. Si falta alguno, pregunta antes de continuar.
+> **Regla importante:** Nunca generes ni subas el plan sin tener definidos: Epic, responsable, fechas y `tiempoEstimado` en cada tarea. Las Epics no necesitan `tiempoEstimado`. Si falta alguno de los campos requeridos, pregunta antes de continuar.
 
 ## Cómo añadir tareas a una Epic existente
 
@@ -55,7 +57,7 @@ Nunca subas una Tarea o Subtarea a Jira sin `tiempoEstimado`. Es un campo obliga
 ## Formato del JSON que debes generar para subirIssuesJira
 
 Campos obligatorios por issue: `accion`, `tipo`, `proyecto`, `titulo`, `fechaInicio`, `fechaFin`, `asignado`
-Campos obligatorios para Tareas y Subtareas: `tiempoEstimado` (número en horas para la "estimación original", ej: 4, 0.5, 8)
+Campos obligatorios para Tareas y Subtareas: `tiempoEstimado` (número en horas para la "estimación original", ej: 4, 0.5, 8). Las Epics no requieren este campo.
 
 Reglas:
 - La Epic siempre va primero y lleva un valor en `ref` (ej: `epic-nombre-proyecto`)

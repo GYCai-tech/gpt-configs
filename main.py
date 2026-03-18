@@ -55,9 +55,10 @@ def resolver_usuario(nombre: str) -> str:
     return account_id
 
 
-def get_proyectos() -> dict:
-    if _proyectos_cache:
+def get_proyectos(force_refresh: bool = False) -> dict:
+    if _proyectos_cache and not force_refresh:
         return _proyectos_cache
+    _proyectos_cache.clear()
     r = requests.get(f"{JIRA_BASE_URL}/rest/api/3/project/search", headers=HEADERS)
     r.raise_for_status()
     for p in r.json().get("values", []):
@@ -70,6 +71,10 @@ def get_proyectos() -> dict:
 def resolver_proyecto_key(nombre: str) -> str:
     proyectos = get_proyectos()
     key = proyectos.get(nombre.strip().lower())
+    if not key:
+        # Reintenta con caché refrescada por si el proyecto es nuevo
+        proyectos = get_proyectos(force_refresh=True)
+        key = proyectos.get(nombre.strip().lower())
     if not key:
         raise ValueError(f"Proyecto '{nombre}' no encontrado.")
     return key

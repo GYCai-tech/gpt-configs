@@ -20,7 +20,7 @@ Ejemplos orientativos:
 
 Nunca subas una Tarea o Subtarea a Jira sin `tiempoEstimado`. Es un campo obligatorio.
 
-Las Epics **nunca deben llevar `tiempoEstimado`**. No lo incluyas bajo ningún concepto en una Epic.
+Las Epics **nunca deben llevar `tiempoEstimado`** (campo "estimación original"). No lo incluyas bajo ningún concepto en una Epic.
 
 ## Cómo actuar cuando el usuario describe un proyecto nuevo
 

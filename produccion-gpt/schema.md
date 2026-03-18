@@ -2,6 +2,50 @@
 
 ## Vistas
 
+### PersV_AnalisisProduccion — Análisis de rendimiento por bono (vista principal de decisión)
+
+Vista de análisis integral por bono activo. Combina progreso temporal, calidad, paradas, materiales y fechas. Es la vista principal para diagnóstico y toma de decisiones de producción.
+
+Columnas: `IdOrden`, `IdBono`, `Bono`, `Area`, `EstadoBono` (Espera/Activo/Bloqueado), `Maquina`, `Prioridad`, `MinutosTrabajados`, `MinutosEsperados` (basado en histórico × cantidad), `PctProgresoTemporal` (% avance real vs esperado), `PiezasOrden`, `PiezasProducidas`, `PiezasScrap`, `PctScrap` (% piezas defectuosas), `MinutosParada`, `MaterialesEnDeficit`, `PeorDisponible`, `FechaPrevFin`, `FechaVencida` (1 si la fecha prevista ya pasó), `EmpleadosDistintos`
+
+Ejemplos:
+```sql
+-- Bonos activos con mayor desviación respecto al tiempo esperado
+SELECT TOP 20 IdOrden, IdBono, Bono, Area, Maquina,
+              MinutosTrabajados, MinutosEsperados, PctProgresoTemporal,
+              FechaVencida, MaterialesEnDeficit
+FROM PersV_AnalisisProduccion
+WHERE EstadoBono = 'Activo'
+ORDER BY PctProgresoTemporal DESC
+
+-- Bonos con scrap significativo
+SELECT TOP 20 IdOrden, IdBono, Bono, Area, Maquina,
+              PiezasProducidas, PiezasScrap, PctScrap, MinutosParada
+FROM PersV_AnalisisProduccion
+WHERE PiezasScrap > 0
+ORDER BY PctScrap DESC
+
+-- Bonos bloqueados con déficit de material y fecha vencida
+SELECT TOP 50 IdOrden, IdBono, Bono, Area, EstadoBono,
+              MaterialesEnDeficit, PeorDisponible, FechaPrevFin, FechaVencida
+FROM PersV_AnalisisProduccion
+WHERE EstadoBono IN ('Bloqueado', 'Espera') AND (MaterialesEnDeficit > 0 OR FechaVencida = 1)
+ORDER BY FechaPrevFin ASC
+
+-- Resumen por área: progreso medio, scrap y paradas
+SELECT TOP 20 Area,
+              COUNT(*) AS Bonos,
+              AVG(PctProgresoTemporal) AS ProgresoMedio,
+              SUM(PiezasScrap) AS ScrapTotal,
+              AVG(PctScrap) AS ScrapMedio,
+              SUM(MinutosParada) AS ParadasTotal
+FROM PersV_AnalisisProduccion
+GROUP BY Area
+ORDER BY ParadasTotal DESC
+```
+
+---
+
 ### PersV_CargaOperarios — Carga de trabajo de operarios hoy
 
 Vista orientada a supervisión de operarios. Muestra todos los operarios que han fichado hoy, su carga acumulada en minutos, en qué máquina y bono están trabajando ahora mismo, y si alguno está sin tarea activa.
@@ -191,6 +235,34 @@ Columnas: `Fecha`, `mes`, `Ejercicio`, `Empleado`, `IdOrden`, `IdBono`, `horas`,
 
 ---
 
+### Pers_CosteTiempoPieza — Coste y tiempo medio por pieza (histórico por artículo)
+Referencia histórica de eficiencia productiva por artículo. Útil para comparar coste real actual vs. estándar.
+Columnas: `IdArticulo`, `OrdenesEvaluadas`, `MediaHorasPieza`, `Costetrapieza`, `Costemaquinapiez`, `costetotalpieza`
+
+Ejemplo:
+```sql
+-- Artículos con mayor coste de mano de obra por pieza
+SELECT TOP 20 IdArticulo, OrdenesEvaluadas, MediaHorasPieza, Costetrapieza, costetotalpieza
+FROM Pers_CosteTiempoPieza
+ORDER BY Costetrapieza DESC
+```
+
+---
+
+### PersVTrazaordenesOperarios — Trazabilidad operario-orden-máquina
+Muestra para cada bono activo: área, máquina, artículo a fabricar, piezas a fabricar y fabricadas, operario asignado.
+Columnas: `Area`, `Subtipo`, `Maquina`, `idorden`, `IdBono`, `ArtFabricar`, `PiezasFabricar`, `Fabricadas`, `IdEmpleado`, `Nombre`, `IdSubtipoMaq`, `CdgMaq`
+
+Ejemplo:
+```sql
+-- Progreso de fabricación por operario y máquina ahora mismo
+SELECT TOP 50 Area, Maquina, ArtFabricar, PiezasFabricar, Fabricadas, Nombre
+FROM PersVTrazaordenesOperarios
+ORDER BY Area, Maquina
+```
+
+---
+
 ## Tablas base
 
 ### Ordenes — Cabecera de órdenes
@@ -205,10 +277,12 @@ Columnas: `Fecha`, `mes`, `Ejercicio`, `Empleado`, `IdOrden`, `IdBono`, `horas`,
 `TiempoMontaje`, `TiempoDesMontaje`, `TotalPiezas`, `TotalMinutos`,
 `Producido`, `Prioridad`, `IdBonoPadre`, `PiezasGolpe`
 
-### Ordenes_Bonos_Lineas — Fichajes de producción
+### Ordenes_Bonos_Lineas — Fichajes de producción (tabla transaccional principal)
 `IdOrden`, `IdBono`, `IdLinea`, `IdArticulo`, `IdOperacion` (1=inicio, 0=cierre),
-`IdEmpleado`, `Matricula`, `Fecha`, `TotalPiezas`,
-`Hinicial`, `Hfinal` (NULL=en curso), `Mparada`, `Scrap`, `CausaScrap`, `IdEstado`
+`IdEmpleado`, `Matricula`, `Fecha`, `TotalPiezas` (piezas buenas),
+`Hinicial`, `Hfinal` (NULL=en curso), `Mparada` (minutos de parada), `Scrap` (piezas defectuosas), `CausaScrap`, `IdEstado`
+
+Fuente primaria para calcular tasa de scrap, tiempos reales y paradas. Usar junto con `Causas_Scrap` para el catálogo de causas.
 
 ### Ordenes_Bonos_Lineas_Emp — Empleados por fichaje
 `IdOrden`, `IdBono`, `IdLinea`, `IdEmpleado`, `Descrip` (nombre completo),

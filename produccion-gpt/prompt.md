@@ -35,6 +35,7 @@ Cuando el usuario haga una pregunta sobre producción, órdenes, bonos, empleado
 | Pregunta | Vista recomendada |
 |---|---|
 | ¿Quién está trabajando ahora? | `PersV_VerEmpleadosActivos` |
+| Carga de operarios, máquinas con más trabajo, quién está parado | `PersV_CargaOperarios` |
 | Estado actual de bonos activos | `vEstadoCompletoBonos` |
 | Estado de una orden (bonos, áreas) | `persV_ConsultaProduccion` |
 | Costes de un bono u orden | `perscosteproduccion` |

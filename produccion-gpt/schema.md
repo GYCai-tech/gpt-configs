@@ -2,6 +2,34 @@
 
 ## Vistas
 
+### PersV_CargaOperarios — Carga de trabajo de operarios hoy
+
+Vista orientada a supervisión de operarios. Muestra todos los operarios que han fichado hoy, su carga acumulada en minutos, en qué máquina y bono están trabajando ahora mismo, y si alguno está sin tarea activa.
+
+Columnas: `IdEmpleado`, `Operario`, `IdMaquina`, `Maquina` (nombre), `OrdenActual`, `BonoActual`, `DescripBono`, `Area`, `EstadoBono` (Espera/Activo/Finalizado/Bloqueado), `InicioFichaje`, `MinutosEnBonoActual`, `MinutosHoy`, `FichajesHoy`, `Situacion` (Trabajando / Sin tarea activa)
+
+Ejemplos:
+```sql
+-- Resumen general: cuántos trabajando vs parados
+SELECT TOP 50 Operario, Maquina, Area, DescripBono, MinutosEnBonoActual, MinutosHoy, Situacion
+FROM PersV_CargaOperarios
+ORDER BY MinutosHoy DESC
+
+-- Operarios sin tarea activa ahora mismo
+SELECT TOP 20 Operario, MinutosHoy, FichajesHoy
+FROM PersV_CargaOperarios
+WHERE Situacion = 'Sin tarea activa'
+
+-- Carga por máquina (operarios activos y minutos acumulados)
+SELECT TOP 20 Maquina, COUNT(*) AS Operarios, SUM(MinutosHoy) AS MinutosTotales
+FROM PersV_CargaOperarios
+WHERE Situacion = 'Trabajando'
+GROUP BY Maquina
+ORDER BY Operarios DESC
+```
+
+---
+
 ### PersV_VerEmpleadosActivos — Empleados trabajando ahora mismo
 Vista de uso inmediato para saber quién está fichado, en qué máquina y en qué orden/bono.
 Columnas: `empleado` (int), `descripemp` (nombre), `maquina`, `orden`, `bono`, `descripbono`, `descripope` (descripción operación), `fechalin` (varchar), `descripinc`, `hora`

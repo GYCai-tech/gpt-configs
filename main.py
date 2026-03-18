@@ -482,7 +482,7 @@ DB_CONN_STR = (
     "Encrypt=no;"
     "TrustServerCertificate=yes;"
 )
-DB_MAX_ROWS = 100
+DB_MAX_ROWS = 500
 
 
 def _db_serialize(val):

@@ -15,7 +15,7 @@
       "post": {
         "operationId": "consultarProduccion",
         "summary": "Ejecutar consulta SQL en la base de datos de producción de GYC",
-        "description": "Recibe una consulta SELECT y la ejecuta contra GOMEZYCRESPO. Devuelve hasta 100 filas.",
+        "description": "Recibe una consulta SELECT y la ejecuta contra GOMEZYCRESPO. Devuelve hasta 500 filas.",
         "requestBody": {
           "required": true,
           "content": {

@@ -22,6 +22,11 @@ Cuando el usuario haga una pregunta sobre producción, órdenes, bonos, empleado
 - **No uses DISTINCT** — usa `GROUP BY`.
 - Para tiempo trabajado: `DATEDIFF(minute, HInicial, ISNULL(HFinal, GETDATE()))`.
 - Empleado trabajando ahora: `HFinal IS NULL` en `VOrdenes_Bonos_Lineas_Emp`.
+- **Filtra siempre órdenes antiguas**: al consultar órdenes de producción, excluye las que llevan abiertas más de 1 mes. Aplica esta condición en `persV_ConsultaProduccion` y en `Ordenes`:
+  ```sql
+  (FechaOrden >= DATEADD(month, -1, GETDATE()) OR FechaProduccion >= DATEADD(month, -1, GETDATE()))
+  ```
+  Esto evita analizar órdenes que probablemente se dejaron abiertas por error.
 
 ---
 

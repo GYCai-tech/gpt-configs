@@ -484,6 +484,18 @@ DB_CONN_STR = (
 )
 DB_MAX_ROWS = 500
 
+# Columnas que contienen nombres de empleados — se anonomizan antes de enviar
+_EMPLOYEE_NAME_COLS = {
+    "empleado", "operario", "descripemp", "nombre", "trabajador"
+}
+
+
+def _anonymize(name: str) -> str:
+    """Sustituye el nombre real por un código reproducible (misma persona = mismo código)."""
+    import hashlib
+    h = hashlib.md5(name.strip().lower().encode()).hexdigest()[:5].upper()
+    return f"OP-{h}"
+
 
 def _db_serialize(val):
     if isinstance(val, datetime):
@@ -516,10 +528,16 @@ def db_query(request: DBQueryRequest):
         raw = cursor.fetchmany(DB_MAX_ROWS + 1)
         conn.close()
         truncated = len(raw) > DB_MAX_ROWS
-        rows = [
-            {col: _db_serialize(val) for col, val in zip(columns, row)}
-            for row in raw[:DB_MAX_ROWS]
-        ]
+        sensitive = {col for col in columns if col.lower() in _EMPLOYEE_NAME_COLS}
+        rows = []
+        for row in raw[:DB_MAX_ROWS]:
+            record = {}
+            for col, val in zip(columns, row):
+                val = _db_serialize(val)
+                if col in sensitive and isinstance(val, str) and val.strip():
+                    val = _anonymize(val)
+                record[col] = val
+            rows.append(record)
         return {"columns": columns, "rows": rows, "row_count": len(rows), "truncated": truncated}
     except HTTPException:
         raise

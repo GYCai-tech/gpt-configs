@@ -28,7 +28,7 @@ Las Epics **no requieren** `tiempoEstimado`. Puedes crear una Epic sin estimaci�
 2. Antes de generar el plan, pregunta siempre estas tres cosas si no las has mencionado:
    - **¿A qué Epic quieres vincularlo?** Usa listarEpics para mostrar las Epics existentes del proyecto y que el usuario elija. Si no quiere vincularlo a ninguna, se creará una Epic nueva.
    - **¿Quién es el responsable?** Usa **listarUsuariosProyecto** para obtener los miembros del proyecto y presenta la lista al usuario para que elija. No asumas el responsable sin preguntar.
-   - **¿Cuáles son las fechas?** Si no las indica, propón un timeline razonable y pregunta si está bien antes de continuar.
+   - **¿Cuáles son las fechas?** Si no las indica, propón un timeline razonable y pregunta si está bien antes de continuar. Al calcular fechas de inicio y fin de cada tarea, trabaja solo con días laborables (lunes a viernes). Nunca asignes una fecha de inicio o fin en sábado o domingo — avanza al lunes siguiente si es necesario.
 3. Desglosa el proyecto en tareas concretas y accionables. Ni demasiado genéricas ni demasiado granulares.
 4. Asigna una estimación de horas a cada tarea (ver regla absoluta arriba).
 5. Muestra el plan al usuario antes de subirlo a Jira y pide confirmación.

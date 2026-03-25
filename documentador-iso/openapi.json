@@ -1,0 +1,183 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ISO Documentador API",
+    "description": "API para generar procedimientos ISO 9001/14001 de GÓMEZ Y CRESPO S.A.",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "https://tu-dominio.ngrok-free.dev" }],
+  "paths": {
+    "/documentos": {
+      "get": {
+        "operationId": "listarDocumentos",
+        "summary": "Lista los procedimientos existentes",
+        "description": "Devuelve los procedimientos ISO ya generados. Úsalo al inicio de una revisión para ver qué documentos existen.",
+        "responses": {
+          "200": {
+            "description": "Lista de documentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "documentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "archivo": { "type": "string" },
+                          "codigo":  { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rag/buscar": {
+      "post": {
+        "operationId": "buscarRAG",
+        "summary": "Busca fragmentos relevantes en procedimientos existentes",
+        "description": "Búsqueda semántica en la base de conocimiento de GYC. Llámalo siempre antes de redactar cualquier sección para conocer el estilo, vocabulario y procedimientos relacionados.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query":  { "type": "string", "description": "Tema o sección a buscar (ej: 'compras proveedor', 'no conformidad')" },
+                  "top_k":  { "type": "integer", "default": 6, "description": "Número de fragmentos a devolver" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fragmentos relevantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": { "type": "string" },
+                    "resultados": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source":    { "type": "string" },
+                          "similitud": { "type": "number" },
+                          "texto":     { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documento/generar": {
+      "post": {
+        "operationId": "generarDocumento",
+        "summary": "Genera el DOCX del procedimiento ISO",
+        "description": "Recibe el JSON completo del procedimiento y genera el archivo Word con el formato corporativo de GYC. Devuelve la URL de descarga.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["codigo", "nombre", "fecha", "historial", "objeto", "alcance", "responsabilidades", "desarrollo", "archivo", "referencias"],
+                "properties": {
+                  "codigo":         { "type": "string", "description": "Código del procedimiento (ej: PC-05)" },
+                  "nombre":         { "type": "string", "description": "Título del procedimiento en mayúsculas" },
+                  "fecha":          { "type": "string", "description": "Fecha en formato DD/MM/AA" },
+                  "revision":       { "type": "string", "default": "00" },
+                  "paginas":        { "type": "integer", "default": 5 },
+                  "elaborado_por":  { "type": "string", "default": "Responsable de Calidad y Medio Ambiente" },
+                  "aprobado_por":   { "type": "string", "default": "Gerencia" },
+                  "historial": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "rev":         { "type": "string" },
+                        "fecha":       { "type": "string" },
+                        "descripcion": { "type": "string" },
+                        "revisado":    { "type": "string" },
+                        "elaborado":   { "type": "string" }
+                      }
+                    }
+                  },
+                  "objeto":   { "type": "string" },
+                  "alcance":  { "type": "string" },
+                  "responsabilidades": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "cargo":  { "type": "string" },
+                        "tareas": { "type": "array", "items": { "type": "string" } }
+                      }
+                    }
+                  },
+                  "desarrollo": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "num":         { "type": "string", "description": "Numeración (ej: 4.1.)" },
+                        "titulo":      { "type": "string" },
+                        "descripcion": { "type": "string" }
+                      }
+                    }
+                  },
+                  "archivo": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "documento":   { "type": "string" },
+                        "responsable": { "type": "string" },
+                        "lugar":       { "type": "string" }
+                      }
+                    }
+                  },
+                  "referencias": { "type": "array", "items": { "type": "string" } },
+                  "anexos":      { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Documento generado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "archivo":  { "type": "string" },
+                    "url":      { "type": "string", "description": "URL de descarga del DOCX" },
+                    "mensaje":  { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

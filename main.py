@@ -37,6 +37,8 @@ def resolver_usuario(nombre: str) -> str:
     clave = nombre.lower()
     if clave in _usuarios_cache:
         return _usuarios_cache[clave]
+
+    # Intento 1: búsqueda general
     r = requests.get(
         f"{JIRA_BASE_URL}/rest/api/3/user/search",
         headers=HEADERS,
@@ -44,10 +46,28 @@ def resolver_usuario(nombre: str) -> str:
     )
     r.raise_for_status()
     usuarios = r.json()
+
+    # Intento 2: si no hay resultados, buscar en usuarios asignables de todos los proyectos
+    if not usuarios:
+        proyectos = get_proyectos()
+        keys_vistos = set()
+        for key in proyectos.values():
+            if key in keys_vistos:
+                continue
+            keys_vistos.add(key)
+            rp = requests.get(
+                f"{JIRA_BASE_URL}/rest/api/3/user/assignable/search",
+                headers=HEADERS,
+                params={"project": key, "maxResults": 50}
+            )
+            if rp.ok:
+                usuarios.extend(rp.json())
+
     if not usuarios:
         raise ValueError(f"Usuario '{nombre}' no encontrado en Jira.")
-    # Buscar coincidencia exacta por displayName primero
-    match = next((u for u in usuarios if u.get("displayName", "").lower() == clave), None)
+
+    # Coincidencia parcial por displayName
+    match = next((u for u in usuarios if clave in u.get("displayName", "").lower()), None)
     if not match:
         match = usuarios[0]
     account_id = match["accountId"]
@@ -500,7 +520,7 @@ def listar_issues(proyecto: str = None, tipo: str = None, asignado: str = None):
 
     if asignado:
         try:
-            account_id = resolver_usuario_id(asignado)
+            account_id = resolver_usuario(asignado)
         except ValueError as e:
             raise HTTPException(status_code=404, detail=str(e))
         conditions.append(f'assignee = "{account_id}"')
@@ -533,7 +553,7 @@ def listar_issues(proyecto: str = None, tipo: str = None, asignado: str = None):
             "url": f"{JIRA_BASE_URL}/browse/{i['key']}"
         })
 
-    return {"proyecto": project_key, "issues": issues}
+    return {"proyecto": project_key if proyecto else None, "asignado": asignado, "issues": issues}
 
 
 @app.get("/health")

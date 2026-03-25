@@ -22,7 +22,7 @@ from docx.oxml import OxmlElement
 
 # Busca la plantilla en el mismo directorio que este script
 HERE     = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE = os.path.join(HERE, "pc02_template.docx")
+TEMPLATE = os.path.join(HERE, "PLANTILLA_PROCEDIMIENTO.docx")
 
 AZUL  = "95B3D7"
 VERDE = "E9EFB1"

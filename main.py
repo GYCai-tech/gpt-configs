@@ -69,12 +69,17 @@ def get_proyectos(force_refresh: bool = False) -> dict:
 
 
 def resolver_proyecto_key(nombre: str) -> str:
+    clave = nombre.strip().lower()
     proyectos = get_proyectos()
-    key = proyectos.get(nombre.strip().lower())
+    key = proyectos.get(clave)
     if not key:
         # Reintenta con caché refrescada por si el proyecto es nuevo
         proyectos = get_proyectos(force_refresh=True)
-        key = proyectos.get(nombre.strip().lower())
+        key = proyectos.get(clave)
+    if not key:
+        # Búsqueda parcial: busca proyectos cuyo nombre contenga la cadena buscada
+        match = next((v for k, v in proyectos.items() if clave in k), None)
+        key = match
     if not key:
         raise ValueError(f"Proyecto '{nombre}' no encontrado.")
     return key

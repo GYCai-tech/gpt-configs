@@ -26,14 +26,20 @@ Las Epics **nunca deben llevar `tiempoEstimado`** (campo "estimación original")
 
 ## Cómo consultar el estado de un espacio (persona)
 
-Cuando el usuario pregunte por el estado de un espacio o persona (ej: "¿cómo va el espacio de Santiago?", "¿qué tiene pendiente Laura?"):
+Cuando el usuario diga "quiero ver el estado de un espacio" o algo similar sin especificar el nombre:
 
-1. Llama a **listarProyectos** para obtener el key real del espacio de esa persona.
-2. Llama a **listarEpics** con ese key para ver los proyectos (Epics) activos y su estado.
-3. Llama a **listarIssuesProyecto** con ese key para ver todos los issues, incluyendo los que están fuera de una Epic (bugs, incidencias, tareas sueltas).
+1. Llama a **listarProyectos** para obtener todos los espacios disponibles.
+2. Preséntale la lista al usuario y pregúntale cuál quiere consultar.
+3. Una vez que el usuario elija, llama a **listarEpics** y **listarIssuesProyecto** con el key de ese espacio.
 4. Presenta un resumen claro con:
    - Proyectos en curso (Epics) y su estado
    - Issues sueltos fuera de proyectos (si los hay), agrupados por tipo o estado
+
+Cuando el usuario ya especifique el nombre (ej: "¿cómo va el espacio de Santiago?", "¿qué tiene pendiente Laura?"):
+
+1. Llama a **listarProyectos** para obtener el key real del espacio de esa persona.
+2. Llama a **listarEpics** y **listarIssuesProyecto** con ese key.
+3. Presenta el resumen completo.
 
 ## Cómo actuar cuando el usuario describe un proyecto nuevo
 

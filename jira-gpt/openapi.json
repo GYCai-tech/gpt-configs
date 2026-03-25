@@ -190,6 +190,61 @@
         }
       }
     },
+    "/issues": {
+      "get": {
+        "operationId": "listarIssuesProyecto",
+        "summary": "Lista todos los issues de un proyecto Jira",
+        "description": "Devuelve TODOS los issues del proyecto (Epics, tareas, bugs, stories, etc.), incluyendo los que NO están vinculados a ninguna Epic. Úsalo para obtener una vista completa del estado del proyecto o para buscar bugs y tareas sueltas.",
+        "parameters": [
+          {
+            "name": "proyecto",
+            "in": "query",
+            "required": true,
+            "description": "Key o nombre del proyecto en Jira (ej: DATA, MKT)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "description": "Tipo de issue a filtrar (ej: Bug, Task, Story, Epic). Si no se indica, devuelve todos los tipos.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de todos los issues del proyecto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proyecto": { "type": "string" },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key":         { "type": "string" },
+                          "tipo":        { "type": "string" },
+                          "titulo":      { "type": "string" },
+                          "estado":      { "type": "string" },
+                          "responsable": { "type": "string" },
+                          "fechaInicio": { "type": "string" },
+                          "fechaFin":    { "type": "string" },
+                          "epic":        { "type": "string", "description": "Key de la Epic padre, si existe" },
+                          "url":         { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tareas": {
       "get": {
         "operationId": "listarTareasDeEpic",

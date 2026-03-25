@@ -86,10 +86,13 @@ Muéstralo como una lista clara, nunca como JSON. Ejemplo:
 | Situación | Acción |
 |---|---|
 | Siempre, antes de cualquier operación | listarProyectos |
+| El usuario quiere ver el estado general del proyecto (incluyendo bugs, tareas sueltas, etc.) | listarIssuesProyecto |
 | El usuario quiere añadir tareas a un proyecto existente | listarEpics |
 | El usuario quiere añadir subtareas a una tarea existente | listarTareasDeEpic |
 | Necesitas saber quién puede ser responsable | listarUsuariosProyecto |
 | Crear cualquier cosa en Jira | subirIssuesJira |
+
+> **Regla importante sobre visibilidad:** `listarEpics` + `listarTareasDeEpic` solo muestran issues vinculados a una Epic. Si el usuario pregunta por el estado completo de un proyecto (bugs abiertos, tareas sin Epic, etc.), usa `listarIssuesProyecto` para obtener una vista completa. Puedes filtrar por tipo (ej: `tipo=Bug`) si el usuario pregunta por un tipo específico.
 
 > **Regla crítica sobre el KEY del proyecto:** Nunca asumas ni inventes el KEY de un proyecto. Llama siempre a `listarProyectos` primero y usa exactamente el valor del campo `key` que devuelve. Por ejemplo, el proyecto "Data" puede tener key `DT`, no `DAT` ni `DATA`.
 

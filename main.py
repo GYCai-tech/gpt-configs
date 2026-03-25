@@ -471,6 +471,51 @@ def listar_tareas(epic: str):
     return {"epic": epic, "tareas": tareas}
 
 
+@app.get("/issues")
+def listar_issues(proyecto: str, tipo: str = None):
+    """
+    Lista todos los issues de un proyecto Jira, independientemente de si están dentro de una Epic.
+    Útil para ver bugs, tareas sueltas y cualquier issue no vinculado a una Epic.
+    Parámetros:
+      - proyecto: key o nombre del proyecto (ej: SAN, DATA)
+      - tipo (opcional): filtrar por tipo de issue (ej: Bug, Task, Story). Si no se indica, devuelve todos.
+    """
+    try:
+        project_key = resolver_proyecto_key(proyecto)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    jql = f'project = "{project_key}"'
+    if tipo:
+        jql += f' AND issuetype = "{tipo}"'
+    jql += ' ORDER BY created DESC'
+
+    r = requests.post(
+        f"{JIRA_BASE_URL}/rest/api/3/search/jql",
+        headers=HEADERS,
+        json={"jql": jql, "maxResults": 100, "fields": ["summary", "status", "issuetype", "assignee", "duedate", "customfield_10015", "parent"]}
+    )
+    r.raise_for_status()
+
+    issues = []
+    for i in r.json().get("issues", []):
+        f = i["fields"]
+        parent = f.get("parent")
+        issues.append({
+            "key": i["key"],
+            "tipo": f["issuetype"]["name"],
+            "titulo": f["summary"],
+            "estado": f["status"]["name"],
+            "responsable": (f.get("assignee") or {}).get("displayName", ""),
+            "fechaInicio": f.get("customfield_10015", ""),
+            "fechaFin": f.get("duedate", ""),
+            "epic": parent.get("key", "") if parent else "",
+            "url": f"{JIRA_BASE_URL}/browse/{i['key']}"
+        })
+
+    return {"proyecto": project_key, "issues": issues}
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

@@ -9,7 +9,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jira-gpt")
@@ -554,6 +554,115 @@ def listar_issues(proyecto: str = None, tipo: str = None, asignado: str = None):
         })
 
     return {"proyecto": project_key if proyecto else None, "asignado": asignado, "issues": issues}
+
+
+@app.get("/worklogs")
+def listar_worklogs(proyecto: str = None, asignado: str = None, dias: int = 30):
+    """
+    Devuelve los registros de tiempo (worklogs) de las tareas de un espacio o persona.
+    Parámetros:
+      - proyecto (opcional): key o nombre del espacio (ej: SANTIAGO)
+      - asignado (opcional): nombre de la persona (ej: Santiago)
+      - dias (opcional): cuántos días hacia atrás consultar (por defecto 30)
+    Al menos uno de proyecto o asignado debe estar presente.
+    """
+    if not proyecto and not asignado:
+        raise HTTPException(status_code=400, detail="Indica al menos 'proyecto' o 'asignado'.")
+
+    # Obtener issues del espacio/asignado
+    conditions = []
+    project_key = None
+
+    if proyecto:
+        try:
+            project_key = resolver_proyecto_key(proyecto)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        conditions.append(f'project = "{project_key}"')
+
+    if asignado:
+        try:
+            account_id = resolver_usuario(asignado)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        conditions.append(f'assignee = "{account_id}"')
+
+    conditions.append('timespent > 0')
+    jql = " AND ".join(conditions) + " ORDER BY updated DESC"
+
+    r = requests.post(
+        f"{JIRA_BASE_URL}/rest/api/3/search/jql",
+        headers=HEADERS,
+        json={"jql": jql, "maxResults": 100, "fields": ["summary", "status", "issuetype", "assignee", "timeoriginalestimate", "timespent", "parent"]}
+    )
+    r.raise_for_status()
+
+    desde = datetime.utcnow() - timedelta(days=dias)
+    resultado = []
+    total_estimado_h = 0
+    total_registrado_h = 0
+
+    for issue in r.json().get("issues", []):
+        f = issue["fields"]
+        issue_key = issue["key"]
+
+        # Obtener worklogs de la tarea
+        rw = requests.get(
+            f"{JIRA_BASE_URL}/rest/api/3/issue/{issue_key}/worklog",
+            headers=HEADERS
+        )
+        if not rw.ok:
+            continue
+
+        worklogs_filtrados = []
+        for wl in rw.json().get("worklogs", []):
+            started = wl.get("started", "")
+            try:
+                fecha = datetime.strptime(started[:19], "%Y-%m-%dT%H:%M:%S")
+            except Exception:
+                continue
+            if fecha < desde:
+                continue
+            autor = wl.get("author", {}).get("displayName", "")
+            # Si hay filtro por asignado, solo incluir worklogs de esa persona
+            if asignado and account_id not in wl.get("author", {}).get("accountId", ""):
+                continue
+            worklogs_filtrados.append({
+                "fecha": started[:10],
+                "autor": autor,
+                "horas": round(wl.get("timeSpentSeconds", 0) / 3600, 2),
+                "comentario": (wl.get("comment") or {}).get("content", [{}])[0].get("content", [{}])[0].get("text", "") if wl.get("comment") else ""
+            })
+
+        if not worklogs_filtrados:
+            continue
+
+        estimado_h = round((f.get("timeoriginalestimate") or 0) / 3600, 2)
+        registrado_h = round(sum(w["horas"] for w in worklogs_filtrados), 2)
+        total_estimado_h += estimado_h
+        total_registrado_h += registrado_h
+
+        parent = f.get("parent")
+        resultado.append({
+            "key": issue_key,
+            "titulo": f["summary"],
+            "tipo": f["issuetype"]["name"],
+            "estado": f["status"]["name"],
+            "epic": parent.get("key", "") if parent else "",
+            "estimadoH": estimado_h,
+            "registradoH": registrado_h,
+            "worklogs": worklogs_filtrados,
+            "url": f"{JIRA_BASE_URL}/browse/{issue_key}"
+        })
+
+    return {
+        "proyecto": project_key,
+        "asignado": asignado,
+        "dias": dias,
+        "totalEstimadoH": round(total_estimado_h, 2),
+        "totalRegistradoH": round(total_registrado_h, 2),
+        "tareas": resultado
+    }
 
 
 @app.get("/health")

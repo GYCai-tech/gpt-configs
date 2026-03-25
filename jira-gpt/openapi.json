@@ -190,6 +190,83 @@
         }
       }
     },
+    "/worklogs": {
+      "get": {
+        "operationId": "listarWorklogs",
+        "summary": "Devuelve los registros de tiempo de las tareas de un espacio o persona",
+        "description": "Consulta cuántas horas se han registrado en cada tarea, comparado con la estimación original. Úsalo cuando el usuario pregunte por el tiempo trabajado, horas registradas o avance real de un proyecto o persona.",
+        "parameters": [
+          {
+            "name": "proyecto",
+            "in": "query",
+            "required": false,
+            "description": "Key o nombre del espacio en Jira (ej: SANTIAGO)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "asignado",
+            "in": "query",
+            "required": false,
+            "description": "Nombre de la persona (ej: Santiago). Filtra los worklogs de esa persona.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "dias",
+            "in": "query",
+            "required": false,
+            "description": "Cuántos días hacia atrás consultar (por defecto 30)",
+            "schema": { "type": "integer", "default": 30 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registros de tiempo agrupados por tarea",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "proyecto":          { "type": "string" },
+                    "asignado":          { "type": "string" },
+                    "dias":              { "type": "integer" },
+                    "totalEstimadoH":    { "type": "number" },
+                    "totalRegistradoH":  { "type": "number" },
+                    "tareas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key":         { "type": "string" },
+                          "titulo":      { "type": "string" },
+                          "tipo":        { "type": "string" },
+                          "estado":      { "type": "string" },
+                          "epic":        { "type": "string" },
+                          "estimadoH":   { "type": "number" },
+                          "registradoH": { "type": "number" },
+                          "worklogs": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "fecha":       { "type": "string" },
+                                "autor":       { "type": "string" },
+                                "horas":       { "type": "number" },
+                                "comentario":  { "type": "string" }
+                              }
+                            }
+                          },
+                          "url": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/issues": {
       "get": {
         "operationId": "listarIssuesProyecto",

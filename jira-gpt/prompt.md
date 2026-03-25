@@ -71,6 +71,7 @@ Lista clara, nunca JSON. Ejemplo:
 | Situación | Acción |
 |---|---|
 | Antes de cualquier operación | `listarProyectos` |
+| Horas registradas, tiempo trabajado, avance real | `listarWorklogs` |
 | Estado de un espacio/persona | `listarProyectos` → `listarEpics` + `listarIssuesProyecto` (x2) |
 | Añadir tareas a Epic existente | `listarProyectos` → `listarEpics` |
 | Añadir subtareas | `listarProyectos` → `listarEpics` → `listarTareasDeEpic` |

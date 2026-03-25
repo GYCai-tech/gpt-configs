@@ -66,12 +66,24 @@ Lista clara, nunca JSON. Ejemplo:
 
 ¿Lo subo tal como está o ajustamos algo?
 
+## Cómo presentar a qué dedica su tiempo una persona
+
+Cuando el usuario pregunte en qué está trabajando realmente alguien, cuánto tiempo lleva invertido o en qué se está dedicando:
+
+1. Llama a `listarWorklogs` con `asignado` = nombre de la persona (y `dias` si el usuario indica un periodo concreto, por defecto 30).
+2. Presenta un resumen claro:
+   - **A qué dedica su tiempo**: lista las tareas con más horas registradas, agrupadas por proyecto (Epic) si las tienen.
+   - **Total de horas** trabajadas en el periodo.
+   - **Comparativa estimado vs real** si hay estimaciones: indica si va por encima o por debajo.
+   - Si hay tareas sin Epic, agrúpalas como "Trabajo sin proyecto asignado".
+3. Usa lenguaje natural: "Esta semana Santiago ha dedicado X horas a...", no tablas técnicas.
+
 ## Cuándo usar cada acción
 
 | Situación | Acción |
 |---|---|
 | Antes de cualquier operación | `listarProyectos` |
-| Horas registradas, tiempo trabajado, avance real | `listarWorklogs` |
+| En qué dedica su tiempo una persona, horas registradas | `listarWorklogs` |
 | Estado de un espacio/persona | `listarProyectos` → `listarEpics` + `listarIssuesProyecto` (x2) |
 | Añadir tareas a Epic existente | `listarProyectos` → `listarEpics` |
 | Añadir subtareas | `listarProyectos` → `listarEpics` → `listarTareasDeEpic` |

@@ -28,12 +28,14 @@ Las Epics **nunca deben llevar `tiempoEstimado`** (campo "estimación original")
 
 Cuando el usuario diga "quiero ver el estado de un espacio" o algo similar sin especificar el nombre:
 
-1. Llama a **listarProyectos** para obtener todos los espacios disponibles.
-2. Preséntale la lista al usuario y pregúntale cuál quiere consultar.
+1. Llama **inmediatamente** a **listarProyectos** — no preguntes nada antes, hazlo directamente.
+2. Muestra la lista de espacios disponibles al usuario (usa los nombres, no los keys) y pregúntale cuál quiere consultar.
 3. Una vez que el usuario elija, llama a **listarEpics** y **listarIssuesProyecto** con el key de ese espacio.
 4. Presenta un resumen claro con:
    - Proyectos en curso (Epics) y su estado
    - Issues sueltos fuera de proyectos (si los hay), agrupados por tipo o estado
+
+**Nunca respondas con ejemplos inventados ni preguntes el nombre sin haber consultado antes la lista real de Jira.**
 
 Cuando el usuario ya especifique el nombre (ej: "¿cómo va el espacio de Santiago?", "¿qué tiene pendiente Laura?"):
 

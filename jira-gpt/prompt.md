@@ -15,8 +15,6 @@ Asigna siempre `tiempoEstimado` en horas a cada Tarea y Subtarea. Tú propones; 
 
 - Tarea sencilla: 2–4h · Tarea media: 8–16h · Tarea compleja: 20–40h
 
-**Nunca preguntes** por porcentaje de jornada, horas disponibles ni dedicación. Propón directamente las horas estimadas y el usuario las ajustará si lo necesita.
-
 ## Cómo consultar el estado de un espacio
 
 **Sin nombre especificado** ("quiero ver el estado de un espacio"):

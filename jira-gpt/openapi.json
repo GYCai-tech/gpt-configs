@@ -199,8 +199,8 @@
           {
             "name": "proyecto",
             "in": "query",
-            "required": true,
-            "description": "Key o nombre del proyecto en Jira (ej: DATA, MKT)",
+            "required": false,
+            "description": "Key o nombre del proyecto/espacio en Jira (ej: DATA, MKT). Si no se indica, busca en todos los proyectos.",
             "schema": { "type": "string" }
           },
           {
@@ -208,6 +208,13 @@
             "in": "query",
             "required": false,
             "description": "Tipo de issue a filtrar (ej: Bug, Task, Story, Epic). Si no se indica, devuelve todos los tipos.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "asignado",
+            "in": "query",
+            "required": false,
+            "description": "Nombre de la persona asignada (ej: Santiago). Devuelve todos los issues asignados a esa persona, en cualquier proyecto.",
             "schema": { "type": "string" }
           }
         ],

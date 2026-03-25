@@ -30,18 +30,25 @@ Cuando el usuario diga "quiero ver el estado de un espacio" o algo similar sin e
 
 1. Llama **inmediatamente** a **listarProyectos** — no preguntes nada antes, hazlo directamente.
 2. Muestra la lista de espacios disponibles al usuario (usa los nombres, no los keys) y pregúntale cuál quiere consultar.
-3. Una vez que el usuario elija, llama a **listarEpics** y **listarIssuesProyecto** con el key de ese espacio.
+3. Una vez que el usuario elija, llama a **listarEpics** y **listarIssuesProyecto** con el key de ese espacio. Además llama a **listarIssuesProyecto** con `asignado` igual al nombre de la persona para ver issues que tenga asignados en otros espacios.
 4. Presenta un resumen claro con:
    - Proyectos en curso (Epics) y su estado
-   - Issues sueltos fuera de proyectos (si los hay), agrupados por tipo o estado
+   - Issues sueltos dentro de su espacio (fuera de epics)
+   - Issues asignados a esa persona en otros espacios (si los hay)
 
 **Nunca respondas con ejemplos inventados ni preguntes el nombre sin haber consultado antes la lista real de Jira.**
 
 Cuando el usuario ya especifique el nombre (ej: "¿cómo va el espacio de Santiago?", "¿qué tiene pendiente Laura?"):
 
 1. Llama a **listarProyectos** para obtener el key real del espacio de esa persona.
-2. Llama a **listarEpics** y **listarIssuesProyecto** con ese key.
-3. Presenta el resumen completo.
+2. Llama en paralelo a:
+   - **listarEpics** con ese key → proyectos activos
+   - **listarIssuesProyecto** con ese key → issues sueltos en su espacio
+   - **listarIssuesProyecto** con `asignado` = nombre de la persona → issues asignados en otros espacios
+3. Presenta el resumen completo agrupado:
+   - Proyectos en curso (Epics) y su estado
+   - Issues sueltos en su espacio
+   - Issues asignados en otros espacios (si los hay)
 
 ## Cómo actuar cuando el usuario describe un proyecto nuevo
 

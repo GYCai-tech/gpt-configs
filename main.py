@@ -477,23 +477,38 @@ def listar_tareas(epic: str):
 
 
 @app.get("/issues")
-def listar_issues(proyecto: str, tipo: str = None):
+def listar_issues(proyecto: str = None, tipo: str = None, asignado: str = None):
     """
-    Lista todos los issues de un proyecto Jira, independientemente de si están dentro de una Epic.
-    Útil para ver bugs, tareas sueltas y cualquier issue no vinculado a una Epic.
+    Lista issues de Jira con filtros opcionales.
     Parámetros:
-      - proyecto: key o nombre del proyecto (ej: SAN, DATA)
-      - tipo (opcional): filtrar por tipo de issue (ej: Bug, Task, Story). Si no se indica, devuelve todos.
+      - proyecto (opcional): key o nombre del proyecto (ej: SAN, DATA). Si no se indica, busca en todos.
+      - tipo (opcional): filtrar por tipo de issue (ej: Bug, Task, Story).
+      - asignado (opcional): nombre de la persona asignada (ej: Santiago). Busca issues asignados a esa persona.
+    Al menos uno de los parámetros debe estar presente.
     """
-    try:
-        project_key = resolver_proyecto_key(proyecto)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    if not proyecto and not asignado:
+        raise HTTPException(status_code=400, detail="Indica al menos 'proyecto' o 'asignado'.")
 
-    jql = f'project = "{project_key}"'
+    conditions = []
+
+    if proyecto:
+        try:
+            project_key = resolver_proyecto_key(proyecto)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        conditions.append(f'project = "{project_key}"')
+
+    if asignado:
+        try:
+            account_id = resolver_usuario_id(asignado)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        conditions.append(f'assignee = "{account_id}"')
+
     if tipo:
-        jql += f' AND issuetype = "{tipo}"'
-    jql += ' ORDER BY created DESC'
+        conditions.append(f'issuetype = "{tipo}"')
+
+    jql = " AND ".join(conditions) + ' ORDER BY created DESC'
 
     r = requests.post(
         f"{JIRA_BASE_URL}/rest/api/3/search/jql",

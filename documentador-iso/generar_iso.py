@@ -400,10 +400,15 @@ def add_desarrollo(doc, data):
         add_run(p, f"{item['num']}  {item['titulo']}", bold=True, size_pt=12)
         set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
         set_spacing(p, before=120, after=60)
-        p2 = doc.add_paragraph()
-        add_run(p2, item["descripcion"], size_pt=12)
-        set_align(p2, WD_ALIGN_PARAGRAPH.JUSTIFY)
-        set_spacing(p2, before=0, after=80)
+        # Soporta múltiples párrafos separados por \n\n o \n
+        parrafos = [pr.strip() for pr in item["descripcion"].replace("\r\n", "\n").split("\n\n") if pr.strip()]
+        if not parrafos:
+            parrafos = [item["descripcion"]]
+        for i, texto in enumerate(parrafos):
+            p2 = doc.add_paragraph()
+            add_run(p2, texto, size_pt=12)
+            set_align(p2, WD_ALIGN_PARAGRAPH.JUSTIFY)
+            set_spacing(p2, before=0, after=60 if i < len(parrafos) - 1 else 80)
     blank(doc)
 
 

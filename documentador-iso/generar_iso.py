@@ -1,7 +1,7 @@
 """
 generar_iso.py — Script autocontenido para generar fichas de procedimiento ISO
 GÓMEZ Y CRESPO S.A. · ISO 9001/14001
-Requiere: python-docx, pc02_template.docx en el mismo directorio
+Requiere: python-docx, PLANTILLA_PROCEDIMIENTO.docx en el mismo directorio
 
 Uso desde Code Interpreter:
     import generar_iso
@@ -278,31 +278,36 @@ def add_tabla_metadatos(doc, data):
 
 
 def add_indice(doc, data):
+    # Secciones fijas con numeración ISO
+    secciones = [
+        (1, "Objeto.", False, []),
+        (2, "Alcance.", False, []),
+        (3, "Definiciones y Abreviaturas.", False, []),
+        (4, "Responsabilidades.", False, []),
+        (5, "Entradas y Salidas del Proceso.", False, []),
+        (6, "Desarrollo.", True, data.get("desarrollo", [])),
+        (7, "Riesgos y Oportunidades.", False, []),
+        (8, "Indicadores del Proceso.", False, []),
+        (9, "Archivo.", False, []),
+        (10, "Diagrama de Flujo.", False, []),
+        (11, "Referencias.", False, []),
+        (12, "Anexos.", False, []),
+    ]
     add_section_title(doc, "ÍNDICE")
-    num = 0
-    for sec in ["Objeto.", "Alcance.", "Responsabilidades."]:
-        num += 1
+    for num, titulo, tiene_sub, subitems in secciones:
         p = doc.add_paragraph()
-        add_run(p, f"{num}. {sec}", bold=True, size_pt=10, color_hex=AZUL)
+        add_run(p, f"{num}. {titulo}", bold=True, size_pt=10, color_hex=AZUL)
         set_spacing(p, before=40, after=40)
-    num += 1
-    p = doc.add_paragraph()
-    add_run(p, f"{num}. Desarrollo.", bold=True, size_pt=10, color_hex=AZUL)
-    set_spacing(p, before=40, after=40)
-    for item in data.get("desarrollo", []):
-        p_sub = doc.add_paragraph()
-        add_run(p_sub, f"    {item['num']} {item['titulo']}.", size_pt=10, color_hex=AZUL)
-        set_spacing(p_sub, before=20, after=20)
-    for sec in ["Archivo.", "Diagrama de Flujo.", "Referencias.", "Anexos."]:
-        num += 1
-        p = doc.add_paragraph()
-        add_run(p, f"{num}. {sec}", bold=True, size_pt=10, color_hex=AZUL)
-        set_spacing(p, before=40, after=40)
+        if tiene_sub:
+            for item in subitems:
+                p_sub = doc.add_paragraph()
+                add_run(p_sub, f"    {item['num']} {item['titulo']}.", size_pt=10, color_hex=AZUL)
+                set_spacing(p_sub, before=20, after=20)
     blank(doc)
 
 
 def add_objeto(doc, data):
-    add_section_title(doc, "OBJETO")
+    add_section_title(doc, "1. OBJETO")
     p = doc.add_paragraph()
     add_run(p, data["objeto"], size_pt=12)
     set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
@@ -311,7 +316,7 @@ def add_objeto(doc, data):
 
 
 def add_alcance(doc, data):
-    add_section_title(doc, "ALCANCE")
+    add_section_title(doc, "2. ALCANCE")
     p = doc.add_paragraph()
     add_run(p, data["alcance"], size_pt=12)
     set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
@@ -319,8 +324,36 @@ def add_alcance(doc, data):
     blank(doc)
 
 
+def add_definiciones(doc, data):
+    """Sección 3 — Definiciones y Abreviaturas (cláusula 3, ISO 9001:2015)"""
+    add_section_title(doc, "3. DEFINICIONES Y ABREVIATURAS")
+    definiciones = data.get("definiciones", [])
+    if not definiciones:
+        p = doc.add_paragraph()
+        add_run(p, "No aplica.", italic=True, size_pt=12)
+        blank(doc)
+        return
+    tbl = doc.add_table(rows=1 + len(definiciones), cols=2)
+    tbl.style = "Table Grid"
+    set_table_borders(tbl)
+    for i, w in enumerate([Cm(5.0), Cm(11.253)]):
+        for cell in tbl.columns[i].cells:
+            cell.width = w
+    for ci, h in enumerate(["TÉRMINO / ABREVIATURA", "DEFINICIÓN"]):
+        c = tbl.cell(0, ci)
+        set_cell_bg(c, AZUL)
+        set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+    for ri, item in enumerate(definiciones, 1):
+        c0 = tbl.cell(ri, 0)
+        add_run(c0.paragraphs[0], item.get("termino", ""), bold=True, size_pt=11)
+        c1 = tbl.cell(ri, 1)
+        add_run(c1.paragraphs[0], item.get("definicion", ""), size_pt=11)
+    blank(doc)
+
+
 def add_responsabilidades(doc, data):
-    add_section_title(doc, "RESPONSABILIDADES")
+    add_section_title(doc, "4. RESPONSABILIDADES")
     for rol in data.get("responsabilidades", []):
         p = doc.add_paragraph()
         add_run(p, rol["cargo"], bold=True, size_pt=12)
@@ -333,8 +366,37 @@ def add_responsabilidades(doc, data):
     blank(doc)
 
 
+def add_entradas_salidas(doc, data):
+    """Sección 5 — Entradas y Salidas del proceso (enfoque basado en procesos, ISO 9001:2015)"""
+    add_section_title(doc, "5. ENTRADAS Y SALIDAS DEL PROCESO")
+    entradas = data.get("entradas", [])
+    salidas  = data.get("salidas", [])
+    max_filas = max(len(entradas), len(salidas), 1)
+    tbl = doc.add_table(rows=1 + max_filas, cols=2)
+    tbl.style = "Table Grid"
+    set_table_borders(tbl)
+    for i, w in enumerate([Cm(8.126), Cm(8.127)]):
+        for cell in tbl.columns[i].cells:
+            cell.width = w
+    for ci, h in enumerate(["ENTRADAS", "SALIDAS"]):
+        c = tbl.cell(0, ci)
+        set_cell_bg(c, AZUL)
+        set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+    for ri in range(max_filas):
+        entrada = entradas[ri] if ri < len(entradas) else ""
+        salida  = salidas[ri]  if ri < len(salidas)  else ""
+        c0 = tbl.cell(ri + 1, 0)
+        set_cell_bg(c0, VERDE)
+        add_run(c0.paragraphs[0], f"• {entrada}" if entrada else "", size_pt=11)
+        c1 = tbl.cell(ri + 1, 1)
+        set_cell_bg(c1, VERDE)
+        add_run(c1.paragraphs[0], f"• {salida}" if salida else "", size_pt=11)
+    blank(doc)
+
+
 def add_desarrollo(doc, data):
-    add_section_title(doc, "DESARROLLO")
+    add_section_title(doc, "6. DESARROLLO")
     for item in data.get("desarrollo", []):
         p = doc.add_paragraph()
         add_run(p, f"{item['num']}  {item['titulo']}", bold=True, size_pt=12)
@@ -347,22 +409,82 @@ def add_desarrollo(doc, data):
     blank(doc)
 
 
-def add_archivo(doc, data):
-    add_section_title(doc, "ARCHIVO")
-    filas = data.get("archivo", [])
-    tbl   = doc.add_table(rows=1 + len(filas), cols=3)
+def add_riesgos(doc, data):
+    """Sección 7 — Riesgos y Oportunidades (cláusula 6.1, ISO 9001:2015)"""
+    add_section_title(doc, "7. RIESGOS Y OPORTUNIDADES")
+    riesgos = data.get("riesgos", [])
+    if not riesgos:
+        p = doc.add_paragraph()
+        add_run(p, "No se han identificado riesgos específicos para este procedimiento.", italic=True, size_pt=12)
+        blank(doc)
+        return
+    tbl = doc.add_table(rows=1 + len(riesgos), cols=4)
     tbl.style = "Table Grid"
     set_table_borders(tbl)
-    for i, w in enumerate([Cm(6.75), Cm(4.251), Cm(5.251)]):
+    for i, w in enumerate([Cm(5.5), Cm(1.5), Cm(5.5), Cm(3.752)]):
         for cell in tbl.columns[i].cells:
             cell.width = w
-    for ci, h in enumerate(["Documento", "Responsable", "Lugar"]):
+    for ci, h in enumerate(["RIESGO / OPORTUNIDAD", "TIPO", "ACCIÓN PREVISTA", "RESPONSABLE"]):
+        c = tbl.cell(0, ci)
+        set_cell_bg(c, AZUL)
+        set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+    for ri, item in enumerate(riesgos, 1):
+        tbl.cell(ri, 0).paragraphs[0]
+        add_run(tbl.cell(ri, 0).paragraphs[0], item.get("riesgo", ""), size_pt=11)
+        tipo_cell = tbl.cell(ri, 1)
+        set_align(tipo_cell.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
+        add_run(tipo_cell.paragraphs[0], item.get("tipo", "R"), size_pt=11)
+        add_run(tbl.cell(ri, 2).paragraphs[0], item.get("accion", ""), size_pt=11)
+        add_run(tbl.cell(ri, 3).paragraphs[0], item.get("responsable", ""), size_pt=11)
+    blank(doc)
+
+
+def add_indicadores(doc, data):
+    """Sección 8 — Indicadores del Proceso (cláusula 9.1, ISO 9001:2015)"""
+    add_section_title(doc, "8. INDICADORES DEL PROCESO")
+    indicadores = data.get("indicadores", [])
+    if not indicadores:
+        p = doc.add_paragraph()
+        add_run(p, "No se han definido indicadores específicos para este procedimiento.", italic=True, size_pt=12)
+        blank(doc)
+        return
+    tbl = doc.add_table(rows=1 + len(indicadores), cols=5)
+    tbl.style = "Table Grid"
+    set_table_borders(tbl)
+    for i, w in enumerate([Cm(3.5), Cm(4.0), Cm(2.0), Cm(2.5), Cm(4.253)]):
+        for cell in tbl.columns[i].cells:
+            cell.width = w
+    for ci, h in enumerate(["INDICADOR", "FÓRMULA / MÉTODO", "META", "FRECUENCIA", "RESPONSABLE"]):
+        c = tbl.cell(0, ci)
+        set_cell_bg(c, AZUL)
+        set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+    for ri, item in enumerate(indicadores, 1):
+        for ci, key in enumerate(["indicador", "formula", "meta", "frecuencia", "responsable"]):
+            c = tbl.cell(ri, ci)
+            set_cell_bg(c, VERDE)
+            add_run(c.paragraphs[0], item.get(key, ""), size_pt=11)
+    blank(doc)
+
+
+def add_archivo(doc, data):
+    """Sección 9 — Archivo (cláusula 7.5.3, ISO 9001:2015 — incluye plazo de conservación)"""
+    add_section_title(doc, "9. ARCHIVO")
+    filas = data.get("archivo", [])
+    tbl   = doc.add_table(rows=1 + len(filas), cols=4)
+    tbl.style = "Table Grid"
+    set_table_borders(tbl)
+    for i, w in enumerate([Cm(5.5), Cm(3.5), Cm(3.5), Cm(3.752)]):
+        for cell in tbl.columns[i].cells:
+            cell.width = w
+    for ci, h in enumerate(["Documento / Registro", "Responsable", "Lugar", "Plazo de Conservación"]):
         c = tbl.cell(0, ci)
         set_cell_bg(c, AZUL)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
         add_run(c.paragraphs[0], h, bold=True, size_pt=11)
     for ri, fila in enumerate(filas, 1):
-        for ci, key in enumerate(["documento", "responsable", "lugar"]):
+        for ci, key in enumerate(["documento", "responsable", "lugar", "plazo"]):
             c = tbl.cell(ri, ci)
             set_cell_bg(c, VERDE)
             add_run(c.paragraphs[0], fila.get(key, ""), size_pt=11)
@@ -370,7 +492,7 @@ def add_archivo(doc, data):
 
 
 def add_diagrama(doc):
-    add_section_title(doc, "DIAGRAMA DE FLUJO")
+    add_section_title(doc, "10. DIAGRAMA DE FLUJO")
     p = doc.add_paragraph()
     add_run(p, "[Insertar diagrama de flujo del procedimiento]",
             italic=True, color_hex="808080", size_pt=12)
@@ -379,17 +501,44 @@ def add_diagrama(doc):
 
 
 def add_referencias(doc, data):
-    add_section_title(doc, "REFERENCIAS")
-    for ref in data.get("referencias", []):
+    """Sección 11 — Referencias, separadas en normativas externas e internas"""
+    add_section_title(doc, "11. REFERENCIAS")
+    refs = data.get("referencias", {})
+
+    # Compatibilidad con formato antiguo (lista plana)
+    if isinstance(refs, list):
+        refs = {"normativas": [], "internas": refs}
+
+    normativas = refs.get("normativas", [])
+    internas   = refs.get("internas", [])
+
+    if normativas:
         p = doc.add_paragraph()
-        add_run(p, ref, size_pt=12)
-        set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
-        set_spacing(p, before=0, after=40)
+        add_run(p, "Referencias normativas externas", bold=True, size_pt=12)
+        set_spacing(p, before=60, after=20)
+        for ref in normativas:
+            p_r = doc.add_paragraph()
+            add_run(p_r, f"• {ref}", size_pt=12)
+            set_spacing(p_r, before=0, after=30)
+
+    if interns := internas:
+        p = doc.add_paragraph()
+        add_run(p, "Documentos internos relacionados", bold=True, size_pt=12)
+        set_spacing(p, before=60, after=20)
+        for ref in interns:
+            p_r = doc.add_paragraph()
+            add_run(p_r, f"• {ref}", size_pt=12)
+            set_spacing(p_r, before=0, after=30)
+
+    if not normativas and not internas:
+        p = doc.add_paragraph()
+        add_run(p, "No aplica.", italic=True, size_pt=12)
+
     blank(doc)
 
 
 def add_anexos(doc, data):
-    add_section_title(doc, "ANEXOS")
+    add_section_title(doc, "12. ANEXOS")
     anexos = data.get("anexos", [])
     if anexos:
         for anexo in anexos:
@@ -402,6 +551,26 @@ def add_anexos(doc, data):
         add_run(p, "No aplica.", italic=True, size_pt=12)
 
 
+# ── Validación ─────────────────────────────────────────────────────────────────
+
+CAMPOS_OBLIGATORIOS = [
+    "codigo", "nombre", "fecha", "revision", "paginas",
+    "elaborado_por", "aprobado_por", "historial",
+    "objeto", "alcance", "responsabilidades", "desarrollo",
+]
+
+def validar(data: dict):
+    faltantes = [c for c in CAMPOS_OBLIGATORIOS if not data.get(c)]
+    if faltantes:
+        raise ValueError(f"Faltan campos obligatorios en el dict: {', '.join(faltantes)}")
+    for entry in data.get("historial", []):
+        if not entry.get("elaborado"):
+            raise ValueError(
+                f"El historial de revisión '{entry.get('rev')}' no tiene el campo 'elaborado' "
+                "(quién elaboró el documento). ISO 9001 requiere trazabilidad de autoría."
+            )
+
+
 # ── Función principal ──────────────────────────────────────────────────────────
 
 def generar(data: dict, output_dir: str = None) -> str:
@@ -409,6 +578,8 @@ def generar(data: dict, output_dir: str = None) -> str:
     Genera el DOCX del procedimiento ISO a partir de un dict.
     Devuelve la ruta del archivo generado.
     """
+    validar(data)
+
     doc  = Document(TEMPLATE)
     body = doc.element.body
     sectPr = body.find(qn("w:sectPr"))
@@ -435,8 +606,12 @@ def generar(data: dict, output_dir: str = None) -> str:
     add_indice(doc, data)
     add_objeto(doc, data)
     add_alcance(doc, data)
+    add_definiciones(doc, data)
     add_responsabilidades(doc, data)
+    add_entradas_salidas(doc, data)
     add_desarrollo(doc, data)
+    add_riesgos(doc, data)
+    add_indicadores(doc, data)
     add_archivo(doc, data)
     add_diagrama(doc)
     add_referencias(doc, data)

@@ -286,12 +286,10 @@ def add_indice(doc, data):
         (4, "Responsabilidades.", False, []),
         (5, "Entradas y Salidas del Proceso.", False, []),
         (6, "Desarrollo.", True, data.get("desarrollo", [])),
-        (7, "Riesgos y Oportunidades.", False, []),
-        (8, "Indicadores del Proceso.", False, []),
-        (9, "Archivo.", False, []),
-        (10, "Diagrama de Flujo.", False, []),
-        (11, "Referencias.", False, []),
-        (12, "Anexos.", False, []),
+        (7, "Archivo.", False, []),
+        (8, "Diagrama de Flujo.", False, []),
+        (9, "Referencias.", False, []),
+        (10, "Anexos.", False, []),
     ]
     add_section_title(doc, "ÍNDICE")
     for num, titulo, tiene_sub, subitems in secciones:
@@ -469,8 +467,8 @@ def add_indicadores(doc, data):
 
 
 def add_archivo(doc, data):
-    """Sección 9 — Archivo (cláusula 7.5.3, ISO 9001:2015 — incluye plazo de conservación)"""
-    add_section_title(doc, "9. ARCHIVO")
+    """Sección 7 — Archivo (cláusula 7.5.3, ISO 9001:2015 — incluye plazo de conservación)"""
+    add_section_title(doc, "7. ARCHIVO")
     filas = data.get("archivo", [])
     tbl   = doc.add_table(rows=1 + len(filas), cols=4)
     tbl.style = "Table Grid"
@@ -492,7 +490,7 @@ def add_archivo(doc, data):
 
 
 def add_diagrama(doc):
-    add_section_title(doc, "10. DIAGRAMA DE FLUJO")
+    add_section_title(doc, "8. DIAGRAMA DE FLUJO")
     p = doc.add_paragraph()
     add_run(p, "[Insertar diagrama de flujo del procedimiento]",
             italic=True, color_hex="808080", size_pt=12)
@@ -501,8 +499,8 @@ def add_diagrama(doc):
 
 
 def add_referencias(doc, data):
-    """Sección 11 — Referencias, separadas en normativas externas e internas"""
-    add_section_title(doc, "11. REFERENCIAS")
+    """Sección 9 — Referencias, separadas en normativas externas e internas"""
+    add_section_title(doc, "9. REFERENCIAS")
     refs = data.get("referencias", {})
 
     # Compatibilidad con formato antiguo (lista plana)
@@ -538,7 +536,7 @@ def add_referencias(doc, data):
 
 
 def add_anexos(doc, data):
-    add_section_title(doc, "12. ANEXOS")
+    add_section_title(doc, "10. ANEXOS")
     anexos = data.get("anexos", [])
     if anexos:
         for anexo in anexos:
@@ -610,8 +608,6 @@ def generar(data: dict, output_dir: str = None) -> str:
     add_responsabilidades(doc, data)
     add_entradas_salidas(doc, data)
     add_desarrollo(doc, data)
-    add_riesgos(doc, data)
-    add_indicadores(doc, data)
     add_archivo(doc, data)
     add_diagrama(doc)
     add_referencias(doc, data)

@@ -363,10 +363,19 @@ def add_responsabilidades(doc, data):
         add_run(p, rol["cargo"], bold=True, size_pt=12)
         set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
         set_spacing(p, before=80, after=20)
-        for tarea in rol.get("tareas", []):
-            p_t = doc.add_paragraph()
-            add_run(p_t, f"• {tarea}", size_pt=12)
-            set_spacing(p_t, before=0, after=40)
+        if "descripcion" in rol:
+            # Texto narrativo con soporte multi-párrafo
+            parrafos = [pr.strip() for pr in rol["descripcion"].replace("\r\n", "\n").split("\n\n") if pr.strip()]
+            for texto in parrafos:
+                p_t = doc.add_paragraph()
+                add_run(p_t, texto, size_pt=12)
+                set_align(p_t, WD_ALIGN_PARAGRAPH.JUSTIFY)
+                set_spacing(p_t, before=0, after=40)
+        else:
+            for tarea in rol.get("tareas", []):
+                p_t = doc.add_paragraph()
+                add_run(p_t, f"• {tarea}", size_pt=12)
+                set_spacing(p_t, before=0, after=40)
     blank(doc)
 
 

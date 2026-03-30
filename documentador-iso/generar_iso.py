@@ -24,8 +24,9 @@ from docx.oxml import OxmlElement
 HERE     = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "PLANTILLA_PROCEDIMIENTO.docx")
 
-AZUL  = "95B3D7"
-VERDE = "E9EFB1"
+AZUL       = "4472C4"   # Azul estándar Word — cambiar si el original usa otro hex
+AZUL_TEXTO = "FFFFFF"   # Texto blanco sobre fondo AZUL
+VERDE      = "E9EFB1"
 
 
 # ── Utilidades XML ─────────────────────────────────────────────────────────────
@@ -249,9 +250,8 @@ def add_tabla_revisiones(doc, data):
             add_run(c.paragraphs[0], val, size_pt=11)
     for ci, h in enumerate(["REV", "FECHA", "DESCRIPCIÓN DE LOS CAMBIOS", "REVISADO Y APROBADO", "ELABORADO"]):
         c = tbl.cell(total_filas - 1, ci)
-        set_cell_bg(c, AZUL)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
-        add_run(c.paragraphs[0], h, size_pt=11)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
     blank(doc)
 
 
@@ -261,13 +261,12 @@ def add_tabla_metadatos(doc, data):
     set_table_borders(tbl)
     for i, w in enumerate([Cm(5.419), Cm(5.417), Cm(5.417)]):
         tbl.columns[i].cells[0].width = w
-    for ci, (label, val, color) in enumerate([
-        ("FECHA:", data["fecha"], AZUL),
-        ("REVISIÓN:", data["revision"], VERDE),
-        ("PÁGINAS:", str(data["paginas"]), AZUL),
+    for ci, (label, val) in enumerate([
+        ("FECHA:", data["fecha"]),
+        ("REVISIÓN:", data["revision"]),
+        ("PÁGINAS:", str(data["paginas"])),
     ]):
         c = tbl.cell(0, ci)
-        set_cell_bg(c, color)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
         add_run(c.paragraphs[0], label + " ", bold=True, size_pt=12)
         add_run(c.paragraphs[0], val, size_pt=12)
@@ -344,7 +343,7 @@ def add_definiciones(doc, data):
         c = tbl.cell(0, ci)
         set_cell_bg(c, AZUL)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
-        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11, color_hex=AZUL_TEXTO)
     for ri, item in enumerate(definiciones, 1):
         c0 = tbl.cell(ri, 0)
         add_run(c0.paragraphs[0], item.get("termino", ""), bold=True, size_pt=11)
@@ -392,7 +391,7 @@ def add_entradas_salidas(doc, data):
         c = tbl.cell(0, ci)
         set_cell_bg(c, AZUL)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
-        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11, color_hex=AZUL_TEXTO)
     for ri in range(max_filas):
         entrada = entradas[ri] if ri < len(entradas) else ""
         salida  = salidas[ri]  if ri < len(salidas)  else ""
@@ -474,7 +473,7 @@ def add_indicadores(doc, data):
         c = tbl.cell(0, ci)
         set_cell_bg(c, AZUL)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
-        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11, color_hex=AZUL_TEXTO)
     for ri, item in enumerate(indicadores, 1):
         for ci, key in enumerate(["indicador", "formula", "meta", "frecuencia", "responsable"]):
             c = tbl.cell(ri, ci)
@@ -497,7 +496,7 @@ def add_archivo(doc, data):
         c = tbl.cell(0, ci)
         set_cell_bg(c, AZUL)
         set_align(c.paragraphs[0], WD_ALIGN_PARAGRAPH.CENTER)
-        add_run(c.paragraphs[0], h, bold=True, size_pt=11)
+        add_run(c.paragraphs[0], h, bold=True, size_pt=11, color_hex=AZUL_TEXTO)
     for ri, fila in enumerate(filas, 1):
         for ci, key in enumerate(["documento", "responsable", "lugar", "plazo"]):
             c = tbl.cell(ri, ci)

@@ -99,6 +99,15 @@ def add_run(para, text, size_pt=12, bold=False, italic=False,
     return run
 
 
+def add_runs_markup(para, text, size_pt=12, color_hex=None, font="Verdana"):
+    """Añade texto con soporte de **negrita** inline (marcado tipo markdown)."""
+    parts = re.split(r'\*\*(.+?)\*\*', text)
+    for i, part in enumerate(parts):
+        if part:
+            add_run(para, part, size_pt=size_pt, bold=(i % 2 == 1),
+                    color_hex=color_hex, font=font)
+
+
 def add_field(para, field_type, size_pt=10):
     sz_val = str(int(size_pt * 2))
 
@@ -301,13 +310,13 @@ def add_indice(doc, data):
 
 
 def _add_multipar(doc, text):
-    """Renderiza un campo de texto dividiendo por \\n\\n en párrafos separados."""
+    """Renderiza texto dividiendo por \\n\\n en párrafos; soporta **negrita** inline."""
     parrafos = [pr.strip() for pr in text.replace("\r\n", "\n").split("\n\n") if pr.strip()]
     if not parrafos:
         parrafos = [text]
     for i, texto in enumerate(parrafos):
         p = doc.add_paragraph()
-        add_run(p, texto, size_pt=12)
+        add_runs_markup(p, texto)
         set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
         set_spacing(p, before=0, after=60 if i < len(parrafos) - 1 else 80)
 
@@ -364,7 +373,7 @@ def add_responsabilidades(doc, data):
             parrafos = [pr.strip() for pr in rol["descripcion"].replace("\r\n", "\n").split("\n\n") if pr.strip()]
             for texto in parrafos:
                 p_t = doc.add_paragraph()
-                add_run(p_t, texto, size_pt=12)
+                add_runs_markup(p_t, texto)
                 set_align(p_t, WD_ALIGN_PARAGRAPH.JUSTIFY)
                 set_spacing(p_t, before=0, after=40)
         else:
@@ -417,7 +426,7 @@ def add_desarrollo(doc, data):
             parrafos = [item["descripcion"]]
         for i, texto in enumerate(parrafos):
             p2 = doc.add_paragraph()
-            add_run(p2, texto, size_pt=12)
+            add_runs_markup(p2, texto)
             set_align(p2, WD_ALIGN_PARAGRAPH.JUSTIFY)
             set_spacing(p2, before=0, after=60 if i < len(parrafos) - 1 else 80)
     blank(doc)

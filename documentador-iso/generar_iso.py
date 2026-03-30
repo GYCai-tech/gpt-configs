@@ -304,21 +304,27 @@ def add_indice(doc, data):
     blank(doc)
 
 
+def _add_multipar(doc, text):
+    """Renderiza un campo de texto dividiendo por \\n\\n en párrafos separados."""
+    parrafos = [pr.strip() for pr in text.replace("\r\n", "\n").split("\n\n") if pr.strip()]
+    if not parrafos:
+        parrafos = [text]
+    for i, texto in enumerate(parrafos):
+        p = doc.add_paragraph()
+        add_run(p, texto, size_pt=12)
+        set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
+        set_spacing(p, before=0, after=60 if i < len(parrafos) - 1 else 80)
+
+
 def add_objeto(doc, data):
     add_section_title(doc, "1. OBJETO")
-    p = doc.add_paragraph()
-    add_run(p, data["objeto"], size_pt=12)
-    set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
-    set_spacing(p, before=60, after=60)
+    _add_multipar(doc, data["objeto"])
     blank(doc)
 
 
 def add_alcance(doc, data):
     add_section_title(doc, "2. ALCANCE")
-    p = doc.add_paragraph()
-    add_run(p, data["alcance"], size_pt=12)
-    set_align(p, WD_ALIGN_PARAGRAPH.JUSTIFY)
-    set_spacing(p, before=60, after=60)
+    _add_multipar(doc, data["alcance"])
     blank(doc)
 
 

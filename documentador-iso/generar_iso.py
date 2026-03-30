@@ -150,75 +150,72 @@ def _set_wt(wt_node, text):
         wt_node.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
 
 
+def _clear_and_write_cell(cell, text, bold=False, size_pt=11):
+    """Elimina todos los runs de todos los párrafos de la celda y escribe el texto nuevo."""
+    for para in cell.paragraphs:
+        for r in list(para._p.findall(qn("w:r"))):
+            para._p.remove(r)
+    p = cell.paragraphs[0]
+    run = p.add_run(text)
+    run.font.name = "Verdana"
+    run.font.size = Pt(size_pt)
+    run.font.bold = bold
+
+
 def update_header(doc, data):
     hdr = doc.sections[0].header
     if not hdr.tables:
         return
     tbl = hdr.tables[0]
 
-    cell_tit = tbl.cell(0, 1)
-    p_tit = cell_tit.paragraphs[0]
-    for r in list(p_tit._p.findall(qn("w:r"))):
-        p_tit._p.remove(r)
-    run = p_tit.add_run(f"{data['codigo']}: {data['nombre']}")
-    run.font.name = "Verdana"
-    run.font.bold = True
-    run.font.size = Pt(14)
+    # Título (fila 0, celda 1)
+    _clear_and_write_cell(tbl.cell(0, 1), f"{data['codigo']}: {data['nombre']}", bold=True, size_pt=14)
 
-    cell_elab = tbl.cell(2, 0)
-    wt_nodes = cell_elab._tc.findall(".//" + qn("w:t"))
-    if wt_nodes:
-        _set_wt(wt_nodes[0], f"Elaborado: {data['elaborado_por']}")
-
+    # Fila 2: elaborado y aprobado (deduplicar celdas fusionadas)
     seen, unique = set(), []
     for c in tbl.rows[2].cells:
         if id(c._tc) not in seen:
             seen.add(id(c._tc))
             unique.append(c)
-    cell_apr = unique[-1]
-    wt_nodes = cell_apr._tc.findall(".//" + qn("w:t"))
-    if wt_nodes:
-        _set_wt(wt_nodes[0], f"Revisado y Aprobado: {data['aprobado_por']}")
+    _clear_and_write_cell(unique[0],  f"Elaborado: {data['elaborado_por']}")
+    _clear_and_write_cell(unique[-1], f"Revisado y Aprobado: {data['aprobado_por']}")
 
 
 def update_footer(doc, data):
     ftr = doc.sections[0].footer
-    if not ftr.tables:
-        return
-    tbl = ftr.tables[0]
+    ftr.is_linked_to_previous = False
 
-    wt_nodes = tbl.cell(0, 0)._tc.findall(".//" + qn("w:t"))
-    if wt_nodes:
-        _set_wt(wt_nodes[0], f"{data['codigo']}: {data['nombre']}")
+    # Crear tabla 2×2 desde cero (la plantilla no tiene pie de página)
+    tbl = ftr.add_table(rows=2, cols=2, width=Cm(16.25))
+    tbl.style = "Table Grid"
+    set_table_borders(tbl)
+    col_w = Cm(8.126)
+    for col in tbl.columns:
+        for cell in col.cells:
+            cell.width = col_w
 
-    wt_nodes = tbl.cell(0, 1)._tc.findall(".//" + qn("w:t"))
-    if wt_nodes:
-        _set_wt(wt_nodes[0], f"Fecha: {data['fecha']}")
-        for wt in wt_nodes[1:]:
-            r_elem = wt.getparent()
-            if r_elem is not None and r_elem.getparent() is not None:
-                r_elem.getparent().remove(r_elem)
+    # Fila 0: nombre del doc | fecha
+    _clear_and_write_cell(tbl.cell(0, 0), f"{data['codigo']}: {data['nombre']}", size_pt=10)
+    _clear_and_write_cell(tbl.cell(0, 1), f"Fecha: {data['fecha']}", size_pt=10)
 
-    wt_nodes = tbl.cell(1, 0)._tc.findall(".//" + qn("w:t"))
-    if wt_nodes:
-        _set_wt(wt_nodes[0], f"Rev: {data['revision']}")
-        for wt in wt_nodes[1:]:
-            r_elem = wt.getparent()
-            if r_elem is not None and r_elem.getparent() is not None:
-                r_elem.getparent().remove(r_elem)
+    # Fila 1: revisión | página X de Y
+    _clear_and_write_cell(tbl.cell(1, 0), f"Rev: {data['revision']}", size_pt=10)
 
-    cell_11 = tbl.cell(1, 1)
-    p_elem  = cell_11.paragraphs[0]._p
-    for r in list(p_elem.findall(qn("w:r"))):
-        p_elem.remove(r)
+    # Celda página: campo PAGE / NUMPAGES
+    cell_pg = tbl.cell(1, 1)
+    for para in cell_pg.paragraphs:
+        for r in list(para._p.findall(qn("w:r"))):
+            para._p.remove(r)
+    p_pg = cell_pg.paragraphs[0]
 
-    def _make_run(text):
+    def _txt_run(text):
         r = OxmlElement("w:r")
         rPr = OxmlElement("w:rPr")
         fonts = OxmlElement("w:rFonts")
         fonts.set(qn("w:ascii"), "Verdana")
         fonts.set(qn("w:hAnsi"), "Verdana")
-        rPr.append(fonts)
+        sz = OxmlElement("w:sz"); sz.set(qn("w:val"), "20")
+        rPr.append(fonts); rPr.append(sz)
         r.append(rPr)
         t = OxmlElement("w:t")
         t.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
@@ -226,10 +223,10 @@ def update_footer(doc, data):
         r.append(t)
         return r
 
-    p_elem.append(_make_run("Página "))
-    add_field(cell_11.paragraphs[0], "PAGE",     size_pt=10)
-    p_elem.append(_make_run(" de "))
-    add_field(cell_11.paragraphs[0], "NUMPAGES", size_pt=10)
+    p_pg._p.append(_txt_run("Página "))
+    add_field(p_pg, "PAGE",     size_pt=10)
+    p_pg._p.append(_txt_run(" de "))
+    add_field(p_pg, "NUMPAGES", size_pt=10)
 
 
 # ── Secciones del cuerpo ───────────────────────────────────────────────────────

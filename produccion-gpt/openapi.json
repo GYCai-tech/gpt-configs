@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "GYC Producción API",
-    "description": "Ejecuta consultas SQL en la base de datos de producción de Gómez y Crespo.",
-    "version": "1.0.0"
+    "title": "GYC Producción DW API",
+    "description": "Consulta las vistas analíticas de producción de Gómez y Crespo (Data Warehouse PostgreSQL).",
+    "version": "2.0.0"
   },
   "servers": [
     {
@@ -11,11 +11,11 @@
     }
   ],
   "paths": {
-    "/query": {
+    "/query-dw": {
       "post": {
-        "operationId": "consultarProduccion",
-        "summary": "Ejecutar consulta SQL en la base de datos de producción de GYC",
-        "description": "Recibe una consulta SELECT y la ejecuta contra GOMEZYCRESPO. Devuelve hasta 500 filas.",
+        "operationId": "consultarDW",
+        "summary": "Ejecutar consulta SQL en el Data Warehouse de producción de GYC",
+        "description": "Recibe una consulta SELECT y la ejecuta contra el schema analytics de gyc_analytics (PostgreSQL). Devuelve hasta 500 filas.",
         "requestBody": {
           "required": true,
           "content": {
@@ -26,7 +26,7 @@
                 "properties": {
                   "sql": {
                     "type": "string",
-                    "description": "Consulta SQL SELECT válida para SQL Server."
+                    "description": "Consulta SQL SELECT válida para PostgreSQL. Usar schema analytics (analytics.v_*) o core (core.fact_*, core.dim_*)."
                   }
                 }
               }

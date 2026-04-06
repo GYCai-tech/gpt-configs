@@ -742,3 +742,56 @@ def db_query(request: DBQueryRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── DW Analytics (PostgreSQL) ──────────────────────────────────────────────────
+
+DW_CONN_STR = (
+    "host=10.0.0.12 port=5434 dbname=gyc_analytics user=gyc_etl password=1234"
+)
+DW_MAX_ROWS = 500
+
+
+def _dw_serialize(val):
+    if isinstance(val, datetime):
+        return val.strftime("%d/%m/%Y %H:%M")
+    if isinstance(val, date):
+        return val.strftime("%d/%m/%Y")
+    if hasattr(val, '__float__'):
+        return float(val)
+    return val
+
+
+class DWQueryRequest(BaseModel):
+    sql: str
+
+
+@app.post("/query-dw")
+def dw_query(request: DWQueryRequest):
+    """
+    Ejecuta una consulta SELECT en el Data Warehouse (PostgreSQL gyc_analytics).
+    Solo se permiten SELECT / WITH. Devuelve hasta 500 filas.
+    """
+    import psycopg2
+    sql = request.sql.strip()
+    first_word = sql.lstrip("(").split()[0].upper() if sql else ""
+    if first_word not in ("SELECT", "WITH"):
+        raise HTTPException(status_code=400, detail="Solo se permiten consultas SELECT.")
+
+    try:
+        conn = psycopg2.connect(DW_CONN_STR, connect_timeout=15)
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        columns = [col.name for col in cursor.description]
+        raw = cursor.fetchmany(DW_MAX_ROWS + 1)
+        conn.close()
+        truncated = len(raw) > DW_MAX_ROWS
+        rows = []
+        for row in raw[:DW_MAX_ROWS]:
+            record = {col: _dw_serialize(val) for col, val in zip(columns, row)}
+            rows.append(record)
+        return {"columns": columns, "rows": rows, "row_count": len(rows), "truncated": truncated}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

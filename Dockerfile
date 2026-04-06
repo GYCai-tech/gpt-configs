@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql17 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir fastapi uvicorn requests python-multipart pyodbc
+RUN pip install --no-cache-dir fastapi uvicorn requests python-multipart pyodbc psycopg2-binary
 
 COPY main.py .
 

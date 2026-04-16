@@ -670,6 +670,19 @@ def health():
     return {"status": "ok"}
 
 
+# ── Webhook Synapsales ─────────────────────────────────────────────────────────
+
+@app.post("/synapsales/contacto")
+async def synapsales_contacto(request: Request):
+    """
+    Receptor del webhook de Synapsales — evento 'enviar contacto al CRM'.
+    Loguea el payload recibido para descubrir el formato antes de persistir en el DW.
+    """
+    payload = await request.json()
+    logger.info(f"[SYNAPSALES] Payload recibido: {json.dumps(payload, ensure_ascii=False, indent=2)}")
+    return {"ok": True, "recibido": payload}
+
+
 # ── DB Producción GYC ──────────────────────────────────────────────────────────
 
 DB_CONN_STR = (

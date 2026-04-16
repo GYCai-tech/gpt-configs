@@ -808,3 +808,98 @@ def dw_query(request: DWQueryRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Webhook Synapsales ─────────────────────────────────────────────────────────
+
+@app.post("/synapsales/contacto")
+async def synapsales_contacto(request: Request):
+    """
+    Receptor del webhook de Synapsales — persiste el lead en marketing.fact_leads_linkedin.
+    """
+    payload = await request.json()
+    logger.info(f"[SYNAPSALES] Payload recibido: {json.dumps(payload, ensure_ascii=False)}")
+
+    ld = payload.get("lead_data", {})
+    cd = payload.get("company_data", {})
+    ed = payload.get("event_data", {})
+    sd = payload.get("specific_data", {})
+
+    sql = """
+        INSERT INTO marketing.fact_leads_linkedin (
+            lead_id, nombre, cargo, email, linkedin_url, pais, ciudad,
+            empresa, sector, pais_empresa, campana, campaign_id, fecha, origen,
+            followers, connections, viewed_profile, contacted, is_relationship,
+            campaign_finished, campaign_finished_at, campaign_finished_reason,
+            linkedin_status, updated_at
+        ) VALUES (
+            %(lead_id)s, %(nombre)s, %(cargo)s, %(email)s, %(linkedin_url)s, %(pais)s, %(ciudad)s,
+            %(empresa)s, %(sector)s, %(pais_empresa)s, %(campana)s, %(campaign_id)s, %(fecha)s, %(origen)s,
+            %(followers)s, %(connections)s, %(viewed_profile)s, %(contacted)s, %(is_relationship)s,
+            %(campaign_finished)s, %(campaign_finished_at)s, %(campaign_finished_reason)s,
+            %(linkedin_status)s, now()
+        )
+        ON CONFLICT (lead_id) DO UPDATE SET
+            nombre                   = EXCLUDED.nombre,
+            cargo                    = EXCLUDED.cargo,
+            email                    = EXCLUDED.email,
+            linkedin_url             = EXCLUDED.linkedin_url,
+            pais                     = EXCLUDED.pais,
+            ciudad                   = EXCLUDED.ciudad,
+            empresa                  = EXCLUDED.empresa,
+            sector                   = EXCLUDED.sector,
+            pais_empresa             = EXCLUDED.pais_empresa,
+            campana                  = EXCLUDED.campana,
+            campaign_id              = EXCLUDED.campaign_id,
+            fecha                    = EXCLUDED.fecha,
+            origen                   = EXCLUDED.origen,
+            followers                = EXCLUDED.followers,
+            connections              = EXCLUDED.connections,
+            viewed_profile           = EXCLUDED.viewed_profile,
+            contacted                = EXCLUDED.contacted,
+            is_relationship          = EXCLUDED.is_relationship,
+            campaign_finished        = EXCLUDED.campaign_finished,
+            campaign_finished_at     = EXCLUDED.campaign_finished_at,
+            campaign_finished_reason = EXCLUDED.campaign_finished_reason,
+            linkedin_status          = EXCLUDED.linkedin_status,
+            updated_at               = now()
+    """
+
+    params = {
+        "lead_id":                  ld.get("lead_id"),
+        "nombre":                   f"{ld.get('first_name', '')} {ld.get('last_name', '')}".strip(),
+        "cargo":                    ld.get("job_title"),
+        "email":                    ld.get("email"),
+        "linkedin_url":             ld.get("linkedin_url"),
+        "pais":                     ld.get("country"),
+        "ciudad":                   ld.get("city"),
+        "empresa":                  cd.get("company_name"),
+        "sector":                   cd.get("company_industry"),
+        "pais_empresa":             cd.get("company_country"),
+        "campana":                  ed.get("campaign_name"),
+        "campaign_id":              ed.get("campaign_id"),
+        "fecha":                    sd.get("timestamp"),
+        "origen":                   ed.get("source"),
+        "followers":                ld.get("followers"),
+        "connections":              ld.get("connections"),
+        "viewed_profile":           ld.get("viewed_profile"),
+        "contacted":                ld.get("contacted"),
+        "is_relationship":          ld.get("is_relationship"),
+        "campaign_finished":        ld.get("campaign_finished"),
+        "campaign_finished_at":     ld.get("campaign_finished_at"),
+        "campaign_finished_reason": ld.get("campaign_finished_reason"),
+        "linkedin_status":          ld.get("linkedin_status"),
+    }
+
+    try:
+        conn = psycopg2.connect(**DW_CONN)
+        cursor = conn.cursor()
+        cursor.execute(sql, params)
+        conn.commit()
+        conn.close()
+        logger.info(f"[SYNAPSALES] Lead {params['lead_id']} persistido en DW")
+    except Exception as e:
+        logger.error(f"[SYNAPSALES] Error persistiendo lead: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"ok": True, "lead_id": params["lead_id"]}
